@@ -7,8 +7,8 @@ import { GraphEdge } from "./graph-edge/graph-edge";
 import { GraphNode } from "./graph-node/graph-node";
 import { TempEdge } from "./temp-edge/temp-edge";
 
-import { useCanvasView } from "@/hooks/useCanvasView";
-import { useMarqueeSelection } from "@/hooks/useMarqueeSelection";
+import { useCanvasView } from "@/hooks/use-canvas-view";
+import { useMarqueeSelection } from "@/hooks/use-marquee-selection";
 import type Konva from "konva";
 
 export default function GraphCanvas() {

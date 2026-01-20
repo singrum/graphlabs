@@ -27,7 +27,7 @@ export const createGraphSlice: StateCreator<
   [["zustand/immer", never]],
   [],
   GraphSlice
-> = (set) => ({
+> = (set, get) => ({
   graph: {
     title: "New Graph",
     nodes: new Map(),
@@ -41,20 +41,22 @@ export const createGraphSlice: StateCreator<
       state.graph.title = title;
     }),
 
-  addNode: (x, y) =>
+  addNode: (x, y) => {
+    const id = v4();
     set((state) => {
-      const id = v4();
       state.graph.nodes.set(id, {
         _id: id,
         ...{ _label: `Node ${++nodeCnt}` },
-        _color: "#3b82f6",
+        _color: "#00a2ff",
         _x: x,
         _y: y,
       } as NodeData);
       // 인접 리스트 초기화 (옵션)
       if (!state.graph.succ.has(id)) state.graph.succ.set(id, new Map());
       if (!state.graph.pred.has(id)) state.graph.pred.set(id, new Map());
-    }),
+    });
+    get().setSelectedIds([id]);
+  },
 
   updateNodeConfig: (id, config) =>
     set((state) => {

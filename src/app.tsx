@@ -29,11 +29,11 @@ export default function App() {
               <Separator />
               {isSelected ? (
                 <ResizablePanelGroup orientation="vertical">
-                  <ResizablePanel>
+                  <ResizablePanel minSize={100} defaultSize={60}>
                     <GraphData />
                   </ResizablePanel>
                   <ResizableHandle />
-                  <ResizablePanel>
+                  <ResizablePanel minSize={100} defaultSize={60}>
                     <PropSection />
                   </ResizablePanel>
                 </ResizablePanelGroup>

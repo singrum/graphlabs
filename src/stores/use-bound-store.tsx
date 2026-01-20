@@ -7,6 +7,7 @@ import {
 } from "./edge-editor-slice";
 import { createGraphSlice, type GraphSlice } from "./graph-slice";
 import { createSelectionSlice, type SelectionSlice } from "./selection-slice";
+import { createSettingsSlice, type SettingsSlice } from "./settings-slice";
 import { createToolbarSlice, type ToolbarSlice } from "./toolbar-slice";
 import { createUISlice, type UISlice } from "./ui-slice";
 export type BoundStore = GraphSlice &
@@ -14,7 +15,8 @@ export type BoundStore = GraphSlice &
   EdgeEditorSlice &
   DataSlice &
   UISlice &
-  SelectionSlice;
+  SelectionSlice &
+  SettingsSlice;
 
 export const useBoundStore = create<BoundStore>()(
   immer((...a) => ({
@@ -24,5 +26,6 @@ export const useBoundStore = create<BoundStore>()(
     ...createDataSlice(...a),
     ...createUISlice(...a),
     ...createSelectionSlice(...a),
+    ...createSettingsSlice(...a),
   })),
 );

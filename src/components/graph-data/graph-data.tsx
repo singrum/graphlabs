@@ -1,5 +1,6 @@
 import { type GraphDataMenu } from "@/stores/data-slice";
 import { useBoundStore } from "@/stores/use-bound-store";
+import { useShallow } from "zustand/react/shallow";
 import { ScrollArea } from "../ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import EdgeView from "./data-view/container/edge-view";
@@ -18,8 +19,9 @@ const graphDataMenus: {
 ];
 
 export default function GraphData() {
-  const dataMenu = useBoundStore((state) => state.graphDataMenu);
-  const setDataMenu = useBoundStore((state) => state.setGraphDataMenu);
+  const [dataMenu, setDataMenu] = useBoundStore(
+    useShallow((state) => [state.graphDataMenu, state.setGraphDataMenu]),
+  );
 
   return (
     <ScrollArea className="overflow-auto h-full">

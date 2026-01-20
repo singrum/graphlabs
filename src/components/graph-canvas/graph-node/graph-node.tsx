@@ -2,22 +2,51 @@ import { useBoundStore } from "@/stores/use-bound-store";
 import Konva from "konva";
 import { memo } from "react";
 import { Circle, Group, Text } from "react-konva";
+import { useShallow } from "zustand/react/shallow";
 
 export const GraphNode = memo(({ id }: { id: string }) => {
-  const node = useBoundStore((state) => state.graph.nodes.get(id));
-  const tool = useBoundStore((state) => state.tool);
-
-  const updateNodeConfig = useBoundStore((state) => state.updateNodeConfig);
-  const addEdge = useBoundStore((state) => state.addEdge);
-  const { connectingNodeId, setConnectingNodeId, resetEdgeEditor } =
-    useBoundStore();
+  const [
+    node,
+    tool,
+    isSelected,
+    setSelectedIds,
+    updateNodeConfig,
+    addEdge,
+    setConnectingNodeId,
+    connectingNodeId,
+    resetEdgeEditor,
+    nodeRadius,
+  ] = useBoundStore(
+    useShallow((state) => [
+      state.graph.nodes.get(id),
+      state.tool,
+      state.selectedIds.has(id),
+      state.setSelectedIds, // 선택 영역 업데이트 함수
+      state.updateNodeConfig,
+      state.addEdge,
+      state.setConnectingNodeId,
+      state.connectingNodeId,
+      state.resetEdgeEditor,
+      state.nodeRadius,
+    ]),
+  );
 
   if (!node) return null;
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    e.cancelBubble = true;
+
+    // A. 엣지 모드일 때
     if (tool === "edge") {
-      e.cancelBubble = true; // Stage 클릭 이벤트 방지
       setConnectingNodeId(id);
+    } else if (tool == "node") {
+      if (!isSelected) {
+        setSelectedIds([id]);
+      }
+    } else {
+      if (!isSelected) {
+        setSelectedIds([id]);
+      }
     }
   };
 
@@ -33,19 +62,21 @@ export const GraphNode = memo(({ id }: { id: string }) => {
     <Group
       x={node._x}
       y={node._y}
-      draggable={tool === "node"}
+      draggable={tool === "node" || tool === "select"}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onDragMove={(e) => {
         updateNodeConfig(id, { _x: e.target.x(), _y: e.target.y() });
       }}
-      listening={tool !== "select"}
+      listening={true}
     >
+      {/* ... Circle 및 Text 로직 동일 */}
       <Circle
-        radius={25}
-        fill={node._color || "#3b82f6"}
-        stroke="white"
-        strokeWidth={2}
+        radius={nodeRadius}
+        fill={node._color}
+        stroke={isSelected ? "#ffffff" : undefined}
+        strokeWidth={isSelected ? 3 : 0}
+        perfectDrawEnabled={false}
       />
       <Text
         text={node._label}

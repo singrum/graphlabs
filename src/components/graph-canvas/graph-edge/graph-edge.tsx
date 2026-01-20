@@ -47,6 +47,7 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
       points={[sourceNodeX, sourceNodeY, targetNodeX, targetNodeY]}
       stroke="#94a3b8"
       strokeWidth={2}
+      listening={false}
       lineCap="round"
       lineJoin="round"
     />

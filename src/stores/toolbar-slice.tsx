@@ -1,7 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { BoundStore } from "./use-bound-store";
 
-export type Tool = "node" | "edge";
+export type Tool = "select" | "node" | "edge";
 
 export interface ToolbarSlice {
   tool: Tool;

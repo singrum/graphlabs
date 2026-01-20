@@ -39,6 +39,7 @@ export const GraphNode = memo(({ id }: { id: string }) => {
       onDragMove={(e) => {
         updateNodeConfig(id, { _x: e.target.x(), _y: e.target.y() });
       }}
+      listening={tool !== "select"}
     >
       <Circle
         radius={25}

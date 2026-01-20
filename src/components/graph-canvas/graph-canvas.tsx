@@ -2,15 +2,14 @@ import { useBoundStore } from "@/stores/use-bound-store";
 import type Konva from "konva";
 import { useCallback } from "react";
 import { Layer, Stage } from "react-konva";
-
 import { GraphEdge } from "./graph-edge/graph-edge";
 import { GraphNode } from "./graph-node/graph-node";
 import { TempEdge } from "./temp-edge/temp-edge";
 
 export default function GraphCanvas() {
   // ID 목록만 구독 (내용물 변경 시에만 Stage 리렌더링)
-  const nodes = useBoundStore((state) => state.nodes);
-  const edges = useBoundStore((state) => state.edges);
+  const nodes = useBoundStore((state) => state.graph.nodes);
+  const edges = useBoundStore((state) => state.graph.edges);
   const nodeIds = Array.from(nodes.keys());
   const edgeIds = Array.from(edges.keys());
 
@@ -28,7 +27,7 @@ export default function GraphCanvas() {
         if (pos) setTempCursorPos(pos);
       }
     },
-    [connectingNodeId, setTempCursorPos]
+    [connectingNodeId, setTempCursorPos],
   );
 
   const handleStageClick = useCallback(
@@ -36,18 +35,10 @@ export default function GraphCanvas() {
       if (tool !== "node" || e.target !== e.target.getStage()) return;
       const pos = e.target.getStage()?.getPointerPosition();
       if (pos) {
-        addNode({
-          id: `node-${Date.now()}`,
-          config: {
-            x: pos.x,
-            y: pos.y,
-            label: `N${nodeIds.length + 1}`,
-            color: "#3b82f6",
-          },
-        });
+        addNode(pos.x, pos.y);
       }
     },
-    [tool, addNode, nodeIds.length]
+    [tool, addNode],
   );
 
   return (
@@ -57,7 +48,7 @@ export default function GraphCanvas() {
       onClick={handleStageClick}
       onMouseMove={handleMouseMove}
       onMouseUp={() => connectingNodeId && resetEdgeEditor()}
-      style={{ backgroundColor: "#f8fafc" }}
+      // style={{ backgroundColor: "#f8fafc" }}
     >
       <Layer>
         {edgeIds.map((id) => (

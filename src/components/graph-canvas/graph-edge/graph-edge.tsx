@@ -3,19 +3,19 @@ import { memo } from "react";
 import { Line } from "react-konva";
 
 function useEdgeCoords(edgeId: string) {
-  const edge = useBoundStore((state) => state.edges.get(edgeId));
+  const edge = useBoundStore((state) => state.graph.edges.get(edgeId));
 
   const x1 = useBoundStore(
-    (state) => state.nodes.get(edge?.source || "")?.config.x
+    (state) => state.graph.nodes.get(edge?._source || "")?._x,
   );
   const y1 = useBoundStore(
-    (state) => state.nodes.get(edge?.source || "")?.config.y
+    (state) => state.graph.nodes.get(edge?._source || "")?._y,
   );
   const x2 = useBoundStore(
-    (state) => state.nodes.get(edge?.target || "")?.config.x
+    (state) => state.graph.nodes.get(edge?._target || "")?._x,
   );
   const y2 = useBoundStore(
-    (state) => state.nodes.get(edge?.target || "")?.config.y
+    (state) => state.graph.nodes.get(edge?._target || "")?._y,
   );
   if (!edge) return undefined;
   if (

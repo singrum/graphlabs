@@ -1,9 +1,20 @@
 import type { Tool } from "@/stores/toolbar-slice";
 import { useBoundStore } from "@/stores/use-bound-store";
-import { Circle, Pointer, Slash } from "lucide-react";
+import { Circle, MousePointer2, Slash } from "lucide-react";
 import { Card } from "../ui/card";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+
+const tools: {
+  value: Tool;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  label: string;
+}[] = [
+  { value: "select", icon: MousePointer2, label: "Select" },
+  { value: "node", icon: Circle, label: "Node" },
+  { value: "edge", icon: Slash, label: "Edge" },
+];
+
 export default function Toolbar() {
   const tool = useBoundStore((state) => state.tool);
   const setTool = useBoundStore((state) => state.setTool);
@@ -18,36 +29,21 @@ export default function Toolbar() {
           if (value) setTool(value as Tool);
         }}
       >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span>
-              <ToggleGroupItem value="select" aria-label="Toggle select">
-                <Pointer className="h-4 w-4" />
-              </ToggleGroupItem>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>Select</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span>
-              <ToggleGroupItem value="node" aria-label="Toggle node">
-                <Circle className="h-4 w-4" />
-              </ToggleGroupItem>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>Node</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span>
-              <ToggleGroupItem value="edge" aria-label="Toggle edge">
-                <Slash className="h-4 w-4" />
-              </ToggleGroupItem>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>Edge</TooltipContent>
-        </Tooltip>
+        {tools.map(({ value, icon: Icon, label }) => (
+          <Tooltip key={value}>
+            <TooltipTrigger asChild>
+              <span>
+                <ToggleGroupItem
+                  value={value}
+                  aria-label={`Toggle ${label.toLowerCase()}`}
+                >
+                  <Icon className="h-4 w-4" />
+                </ToggleGroupItem>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{label}</TooltipContent>
+          </Tooltip>
+        ))}
       </ToggleGroup>
     </Card>
   );

@@ -4,7 +4,8 @@ import { memo, useMemo } from "react";
 import { Arrow } from "react-konva"; // Line 대신 Arrow 사용
 import { useShallow } from "zustand/react/shallow";
 export const GraphEdge = memo(({ id }: { id: string }) => {
-  // 1. 단순 원시값들은 개별 구독 (가장 안전)
+  const pointerLength = useBoundStore((state) => state.pointerLength);
+  const pointerWidth = useBoundStore((state) => state.pointerWidth);
   const edge = useBoundStore((state) => state.graph.edges.get(id))!;
   const isSelected = useBoundStore((state) => state.selectedEdgeIds.has(id));
   const tool = useBoundStore((state) => state.tool);
@@ -16,7 +17,6 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
   const sId = edge._source;
   const tId = edge._target;
 
-  // 2. 좌표값 개별 구독 (숫자형이므로 무한 루프 위험 제로)
   const sx = useBoundStore((state) => state.graph.nodes.get(sId)!._x);
   const sy = useBoundStore((state) => state.graph.nodes.get(sId)!._y);
   const tx = useBoundStore((state) => state.graph.nodes.get(tId)!._x);
@@ -81,8 +81,6 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
     return { points, isCurved, isLoop: false };
   }, [id, sx, sy, tx, ty, pairEdgeIds, nodeRadius, isLoop, sId, tId]);
 
-  if (!layout) return null;
-
   return (
     <Arrow
       points={layout.points}
@@ -90,8 +88,8 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
       stroke={isSelected ? "#00a2ff" : "#94a3b8"}
       strokeWidth={isSelected ? 3 : 2}
       fill={isSelected ? "#00a2ff" : "#94a3b8"}
-      pointerLength={8}
-      pointerWidth={8}
+      pointerLength={pointerLength}
+      pointerWidth={pointerWidth}
       listening={true}
       lineCap="round"
       lineJoin="round"

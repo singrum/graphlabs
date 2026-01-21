@@ -4,6 +4,10 @@ import type { BoundStore } from "./use-bound-store";
 export interface SettingsSlice {
   nodeRadius: number;
   setNodeRadius: (radius: number) => void;
+  pointerLength: number;
+  setPointerLength: (length: number) => void;
+  pointerWidth: number;
+  setPointerWidth: (width: number) => void;
 }
 
 // immer 미들웨어로 감싸주면 set 내에서 가변 로직 작성이 가능합니다.
@@ -15,4 +19,8 @@ export const createSettingsSlice: StateCreator<
 > = (set) => ({
   nodeRadius: 20,
   setNodeRadius: (radius: number) => set(() => ({ nodeRadius: radius })),
+  pointerLength: 12,
+  setPointerLength: (length: number) => set(() => ({ pointerLength: length })),
+  pointerWidth: 12,
+  setPointerWidth: (width: number) => set(() => ({ pointerWidth: width })),
 });

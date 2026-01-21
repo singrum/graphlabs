@@ -37,15 +37,19 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
 
   // 4. 레이아웃 계산
   const layout = useMemo(() => {
+    const tipOffset = pointerLength * 0.2;
+    const adjustedRadius = nodeRadius + tipOffset;
+
     if (isLoop) {
       const points = getSelfLoopPoints(
         sx,
         sy,
-        nodeRadius,
+        adjustedRadius, // 보정된 반지름 전달
         pairEdgeIds.indexOf(id),
       );
       return { points, isCurved: true, isLoop: true };
     }
+
     const total = pairEdgeIds.length;
     const index = pairEdgeIds.indexOf(id);
     const isCurved = total > 1;
@@ -61,33 +65,45 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
       const angleTarget = Math.atan2(cp.y - ty, cp.x - tx);
 
       points = [
-        sx + Math.cos(angleSource) * nodeRadius,
-        sy + Math.sin(angleSource) * nodeRadius,
+        sx + Math.cos(angleSource) * adjustedRadius,
+        sy + Math.sin(angleSource) * adjustedRadius,
         cp.x,
         cp.y,
-        tx + Math.cos(angleTarget) * nodeRadius,
-        ty + Math.sin(angleTarget) * nodeRadius,
+        tx + Math.cos(angleTarget) * adjustedRadius,
+        ty + Math.sin(angleTarget) * adjustedRadius,
       ];
     } else {
       const angle = Math.atan2(ty - sy, tx - sx);
       points = [
-        sx + Math.cos(angle) * nodeRadius,
-        sy + Math.sin(angle) * nodeRadius,
-        tx - Math.cos(angle) * nodeRadius,
-        ty - Math.sin(angle) * nodeRadius,
+        sx + Math.cos(angle) * adjustedRadius,
+        sy + Math.sin(angle) * adjustedRadius,
+        tx - Math.cos(angle) * adjustedRadius,
+        ty - Math.sin(angle) * adjustedRadius,
       ];
     }
 
     return { points, isCurved, isLoop: false };
-  }, [id, sx, sy, tx, ty, pairEdgeIds, nodeRadius, isLoop, sId, tId]);
+  }, [
+    id,
+    sx,
+    sy,
+    tx,
+    ty,
+    pairEdgeIds,
+    nodeRadius,
+    isLoop,
+    sId,
+    tId,
+    pointerLength,
+  ]);
 
   return (
     <Arrow
       points={layout.points}
       tension={layout.isLoop ? 0.5 : layout.isCurved ? 0.5 : 0}
-      stroke={isSelected ? "#00a2ff" : "#94a3b8"}
+      stroke={isSelected ? "#ffffff" : "#94a3b8"}
       strokeWidth={isSelected ? 3 : 2}
-      fill={isSelected ? "#00a2ff" : "#94a3b8"}
+      fill={isSelected ? "#ffffff" : "#94a3b8"}
       pointerLength={pointerLength}
       pointerWidth={pointerWidth}
       listening={true}

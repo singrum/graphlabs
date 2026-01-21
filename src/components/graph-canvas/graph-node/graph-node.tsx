@@ -85,7 +85,7 @@ export const GraphNode = memo(({ id }: { id: string }) => {
         y={30}
         width={50}
         align="center"
-        fill="#333"
+        fill={node._color}
         listening={false}
       />
     </Group>

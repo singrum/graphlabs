@@ -8,6 +8,7 @@ import type {
   Schema,
 } from "@/types/graph";
 import { useMemo } from "react";
+import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { ScrollArea } from "../ui/scroll-area";
@@ -20,10 +21,6 @@ interface SelectionViewProps {
 }
 
 export function SelectionView({ type, data, schema }: SelectionViewProps) {
-  const Icon = itemAssets[type].icon;
-
-  // 1. 공통 값 계산 로직 (Strict Typing)
-  // 모든 데이터 객체를 순회하며 스키마에 정의된 키들의 값이 일치하는지 확인
   const commonData = useMemo(() => {
     if (data.length === 0) return null;
     if (data.length === 1) return data[0];
@@ -58,25 +55,7 @@ export function SelectionView({ type, data, schema }: SelectionViewProps) {
   return (
     <ScrollArea className="h-full">
       <div className="space-y-6 p-4 h-full">
-        {/* 헤더: 아이콘 및 라벨/선택 개수 */}
-        <div className="flex items-center gap-2">
-          <Icon
-            className={cn("size-4", {
-              "text-muted-foreground": selectedCount > 1,
-            })}
-          />
-          <div className="font-medium text-base truncate">
-            {data.length === 1 ? (
-              ((commonData as Record<string, unknown>)._label as string)
-            ) : (
-              <span className="italic font-normal text-muted-foreground">
-                {selectedCount} {type}s selected
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* 속성 리스트: 스키마 기반 렌더링 */}
+        <Header type={type} data={data} />
         <div className="space-y-4">
           {(
             Object.entries(schema) as Array<
@@ -94,17 +73,8 @@ export function SelectionView({ type, data, schema }: SelectionViewProps) {
 
               return (
                 <div key={key as string} className="flex flex-col gap-1.5">
-                  {/* 속성 이름 및 타입 레이블 */}
-
                   <Label className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center w-full">
-                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        {(key as string).replace("_", "")}
-                      </span>
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-secondary text-secondary-foreground font-mono">
-                        {propType}
-                      </span>
-                    </div>
+                    <LabelHeader labelKey={key as string} propType={propType} />
                     {propType == "color" ||
                     propType == "text" ||
                     propType == "number" ? (
@@ -143,5 +113,48 @@ export function SelectionView({ type, data, schema }: SelectionViewProps) {
         </div>
       </div>
     </ScrollArea>
+  );
+}
+
+function Header({
+  type,
+  data,
+}: {
+  type: "node" | "edge";
+  data: NodeData[] | EdgeData[];
+}) {
+  const Icon = itemAssets[type].icon;
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className={cn("size-4")} />
+      <div className="font-medium text-base truncate">
+        {data.length === 1 ? (
+          (data[0]._label as string)
+        ) : (
+          <span className="italic ">
+            {data.length} {type}s selected
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LabelHeader({
+  labelKey,
+  propType,
+}: {
+  labelKey: string;
+  propType: PropertyType;
+}) {
+  return (
+    <div className="flex justify-between items-center w-full">
+      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+        {labelKey.replace("_", "")}
+      </span>
+      <Badge variant="secondary" className="text-muted-foreground">
+        {propType}
+      </Badge>
+    </div>
   );
 }

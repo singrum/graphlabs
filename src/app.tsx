@@ -38,7 +38,7 @@ export default function App() {
         </Leftbar>
         <Rightbar>
           <ResizablePanelGroup orientation="vertical">
-            <ResizablePanel minSize={100} defaultSize={30}>
+            <ResizablePanel minSize={100} defaultSize={40}>
               <NodeSelection />
             </ResizablePanel>
 

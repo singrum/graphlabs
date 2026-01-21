@@ -10,9 +10,7 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
   const isSelected = useBoundStore((state) => state.selectedEdgeIds.has(id));
   const tool = useBoundStore((state) => state.tool);
   const nodeRadius = useBoundStore((state) => state.nodeRadius);
-  const setSelectedEntities = useBoundStore(
-    (state) => state.setSelectedEntities,
-  );
+  const setSelectedEdges = useBoundStore((state) => state.setSelectedEdges);
 
   const sId = edge._source;
   const tId = edge._target;
@@ -102,7 +100,7 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
       points={layout.points}
       tension={layout.isLoop ? 0.5 : layout.isCurved ? 0.5 : 0}
       stroke={isSelected ? "#ffffff" : "#94a3b8"}
-      strokeWidth={isSelected ? 3 : 2}
+      strokeWidth={isSelected ? 3 : 3}
       fill={isSelected ? "#ffffff" : "#94a3b8"}
       pointerLength={pointerLength}
       pointerWidth={pointerWidth}
@@ -112,7 +110,7 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
       onClick={(e) => {
         if (tool === "select") {
           e.cancelBubble = true;
-          setSelectedEntities([], [id]);
+          setSelectedEdges([id]);
         }
       }}
     />

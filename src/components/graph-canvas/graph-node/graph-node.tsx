@@ -10,7 +10,7 @@ export const GraphNode = memo(({ id }: { id: string }) => {
     tool,
     isSelected,
     setSelectedNodes,
-    updateNodeConfig,
+    updateEntities, // updateNodeConfig 대신 사용
     addEdge,
     setConnectingNodeId,
     connectingNodeId,
@@ -21,8 +21,8 @@ export const GraphNode = memo(({ id }: { id: string }) => {
       state.graph.nodes.get(id),
       state.tool,
       state.selectedNodeIds.has(id),
-      state.setSelectedNodes, // 선택 영역 업데이트 함수
-      state.updateNodeConfig,
+      state.setSelectedNodes,
+      state.updateEntities, // 범용 업데이트 액션
       state.addEdge,
       state.setConnectingNodeId,
       state.connectingNodeId,
@@ -66,7 +66,7 @@ export const GraphNode = memo(({ id }: { id: string }) => {
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onDragMove={(e) => {
-        updateNodeConfig(id, { _x: e.target.x(), _y: e.target.y() });
+        updateEntities("node", [id], { _x: e.target.x(), _y: e.target.y() });
       }}
       listening={true}
     >

@@ -1,7 +1,6 @@
 import { addToAdjacency, removeFromAdjacency } from "@/lib/graph-utils";
 import { sampleGraph } from "@/lib/sample-graphs";
 import type { EdgeData, Graph, NodeData, Schema } from "@/types/graph";
-import type { CircleConfig } from "konva/lib/shapes/Circle";
 import { v4 } from "uuid";
 import type { StateCreator } from "zustand";
 import type { BoundStore } from "./use-bound-store";
@@ -30,7 +29,7 @@ export interface GraphSlice {
 
   // 노드 액션
   addNode: (x: number, y: number) => void;
-  updateNodeConfig: (id: string, config: Partial<CircleConfig>) => void;
+
   deleteNode: (id: string) => void;
 
   // 엣지 액션
@@ -78,13 +77,7 @@ export const createGraphSlice: StateCreator<
     get().setSelectedNodes([id]);
   },
 
-  updateNodeConfig: (id, config) =>
-    set((state) => {
-      const node = state.graph.nodes.get(id);
-      if (node) {
-        Object.assign(node, config);
-      }
-    }),
+
 
   deleteNode: (nodeId) =>
     set((state) => {

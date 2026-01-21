@@ -16,7 +16,7 @@ export default function EdgeLabelButton({
   return (
     <Button
       className={cn(
-        "w-full justify-start hover:bg-accent dark:hover:bg-accent/50",
+        "w-full justify-start hover:bg-accent dark:hover:bg-accent/50 text-ellipsis max-w-full",
         {
           "bg-accent dark:bg-foreground/15 hover:bg-accent dark:hover:bg-foreground/15":
             selectedEdgeIds.has(id),
@@ -35,7 +35,7 @@ export default function EdgeLabelButton({
       }}
     >
       <itemAssets.edge.icon />
-      {label}
+      <span className="truncate flex-1 text-left">{label}</span>
     </Button>
   );
 }

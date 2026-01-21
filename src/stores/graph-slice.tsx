@@ -41,6 +41,8 @@ export interface GraphSlice {
     ids: string[],
     data: Partial<NodeData | EdgeData>,
   ) => void;
+  deleteEntities: (type: "node" | "edge", ids: string[]) => void;
+  deleteSelected: () => void;
 }
 
 export const createGraphSlice: StateCreator<
@@ -76,8 +78,6 @@ export const createGraphSlice: StateCreator<
     });
     get().setSelectedNodes([id]);
   },
-
-
 
   deleteNode: (nodeId) =>
     set((state) => {
@@ -201,4 +201,73 @@ export const createGraphSlice: StateCreator<
         });
       }
     }),
+  deleteEntities: (type, ids) =>
+    set((state) => {
+      const { nodes, edges, succ, pred } = state.graph;
+
+      if (type === "node") {
+        ids.forEach((nodeId) => {
+          // 1. 해당 노드와 연결된 모든 엣지 찾기 및 삭제
+          // succ(출발)과 pred(도착)에 기록된 모든 상대 노드와의 연결을 끊음
+          const outEdges = succ.get(nodeId);
+          if (outEdges) {
+            outEdges.forEach((edgeIds, targetId) => {
+              edgeIds.forEach((edgeId) => {
+                edges.delete(edgeId);
+                removeFromAdjacency(pred, targetId, nodeId, edgeId);
+              });
+            });
+            succ.delete(nodeId);
+          }
+
+          const inEdges = pred.get(nodeId);
+          if (inEdges) {
+            inEdges.forEach((edgeIds, sourceId) => {
+              edgeIds.forEach((edgeId) => {
+                edges.delete(edgeId);
+                removeFromAdjacency(succ, sourceId, nodeId, edgeId);
+              });
+            });
+            pred.delete(nodeId);
+          }
+
+          nodes.delete(nodeId);
+
+          state.selectedNodeIds.delete(nodeId);
+        });
+      } else {
+        ids.forEach((edgeId) => {
+          const edge = edges.get(edgeId);
+          if (edge) {
+            removeFromAdjacency(succ, edge._source, edge._target, edgeId);
+            removeFromAdjacency(pred, edge._target, edge._source, edgeId);
+            edges.delete(edgeId);
+          }
+          state.selectedEdgeIds.delete(edgeId);
+        });
+      }
+    }),
+  deleteSelected: () => {
+    const state = get();
+    const selectedNodeIds = Array.from(state.selectedNodeIds);
+    const selectedEdgeIds = Array.from(state.selectedEdgeIds);
+
+    if (selectedNodeIds.length === 0 && selectedEdgeIds.length === 0) return;
+
+    if (selectedNodeIds.length > 0) {
+      state.deleteEntities("node", selectedNodeIds);
+    }
+
+    if (selectedEdgeIds.length > 0) {
+      const remainingEdges = selectedEdgeIds.filter((id) =>
+        state.graph.edges.has(id),
+      );
+      if (remainingEdges.length > 0) {
+        state.deleteEntities("edge", remainingEdges);
+      }
+    }
+
+    // 3. 선택 초기화
+    state.setSelectedEntities([], []);
+  },
 });

@@ -4,46 +4,59 @@ import { memo, useMemo } from "react";
 import { Arrow } from "react-konva"; // Line 대신 Arrow 사용
 import { useShallow } from "zustand/react/shallow";
 export const GraphEdge = memo(({ id }: { id: string }) => {
+  // 1. 모든 Hook은 컴포넌트 최상단에 몰아서 배치합니다. (순서 고정)
   const pointerLength = useBoundStore((state) => state.pointerLength);
   const pointerWidth = useBoundStore((state) => state.pointerWidth);
-  const edge = useBoundStore((state) => state.graph.edges.get(id))!;
-  const isSelected = useBoundStore((state) => state.selectedEdgeIds.has(id));
-  const tool = useBoundStore((state) => state.tool);
   const nodeRadius = useBoundStore((state) => state.nodeRadius);
-  const setSelectedEdges = useBoundStore((state) => state.setSelectedEdges);
+  const tool = useBoundStore((state) => state.tool);
+  const setSelectedEntities = useBoundStore(
+    (state) => state.setSelectedEntities,
+  );
 
-  const sId = edge._source;
-  const tId = edge._target;
+  const edge = useBoundStore((state) => state.graph.edges.get(id));
+  const isSelected = useBoundStore((state) => state.selectedEdgeIds.has(id));
 
-  const sx = useBoundStore((state) => state.graph.nodes.get(sId)!._x);
-  const sy = useBoundStore((state) => state.graph.nodes.get(sId)!._y);
-  const tx = useBoundStore((state) => state.graph.nodes.get(tId)!._x);
-  const ty = useBoundStore((state) => state.graph.nodes.get(tId)!._y);
+  const sId = edge?._source;
+  const tId = edge?._target;
+
+  const sourceNode = useBoundStore((state) =>
+    sId ? state.graph.nodes.get(sId) : null,
+  );
+  const targetNode = useBoundStore((state) =>
+    tId ? state.graph.nodes.get(tId) : null,
+  );
 
   const pairEdgeIds = useBoundStore(
     useShallow((state) => {
+      if (!sId || !tId) return [];
       const [firstId, secondId] = sId < tId ? [sId, tId] : [tId, sId];
-
       const forward = state.graph.succ.get(firstId)?.get(secondId) || [];
       const backward = state.graph.succ.get(secondId)?.get(firstId) || [];
-
       return [...forward, ...backward];
     }),
   );
 
-  const isLoop = sId === tId; // 자기 자신인지 확인
-
-  // 4. 레이아웃 계산
   const layout = useMemo(() => {
+    if (!edge || !sourceNode || !targetNode) {
+      return { points: [], isCurved: false, isLoop: false };
+    }
+
+    const sx = sourceNode._x;
+    const sy = sourceNode._y;
+    const tx = targetNode._x;
+    const ty = targetNode._y;
+    const isLoop = sId === tId;
+
     const tipOffset = pointerLength * 0.2;
     const adjustedRadius = nodeRadius + tipOffset;
 
     if (isLoop) {
+      const loopIndex = pairEdgeIds.indexOf(id);
       const points = getSelfLoopPoints(
         sx,
         sy,
-        adjustedRadius, // 보정된 반지름 전달
-        pairEdgeIds.indexOf(id),
+        adjustedRadius,
+        loopIndex !== -1 ? loopIndex : 0,
       );
       return { points, isCurved: true, isLoop: true };
     }
@@ -53,15 +66,13 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
     const isCurved = total > 1;
     const step = 40;
     const offset = isCurved ? (index - (total - 1) / 2) * step : 0;
-    const isReversed = sId > tId;
+    const isReversed = (sId ?? "") > (tId ?? "");
 
     let points: number[] = [];
-
-    if (isCurved) {
+    if (isCurved && index !== -1) {
       const cp = getControlPoint(sx, sy, tx, ty, offset, isReversed);
       const angleSource = Math.atan2(cp.y - sy, cp.x - sx);
       const angleTarget = Math.atan2(cp.y - ty, cp.x - tx);
-
       points = [
         sx + Math.cos(angleSource) * adjustedRadius,
         sy + Math.sin(angleSource) * adjustedRadius,
@@ -79,28 +90,30 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
         ty - Math.sin(angle) * adjustedRadius,
       ];
     }
-
     return { points, isCurved, isLoop: false };
   }, [
     id,
-    sx,
-    sy,
-    tx,
-    ty,
+    edge,
+    sourceNode,
+    targetNode,
     pairEdgeIds,
     nodeRadius,
-    isLoop,
+    pointerLength,
     sId,
     tId,
-    pointerLength,
   ]);
+
+  // 3. [최종 가드] 모든 Hook 호출이 끝난 후에 조건부 렌더링을 수행합니다.
+  if (!edge || !sourceNode || !targetNode || layout.points.length === 0) {
+    return null;
+  }
 
   return (
     <Arrow
       points={layout.points}
       tension={layout.isLoop ? 0.5 : layout.isCurved ? 0.5 : 0}
       stroke={isSelected ? "#ffffff" : "#94a3b8"}
-      strokeWidth={isSelected ? 3 : 3}
+      strokeWidth={3}
       fill={isSelected ? "#ffffff" : "#94a3b8"}
       pointerLength={pointerLength}
       pointerWidth={pointerWidth}
@@ -110,7 +123,7 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
       onClick={(e) => {
         if (tool === "select") {
           e.cancelBubble = true;
-          setSelectedEdges([id]);
+          setSelectedEntities([], [id]);
         }
       }}
     />

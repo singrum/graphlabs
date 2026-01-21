@@ -1,4 +1,3 @@
-import { cn } from "@/lib/utils";
 import { itemAssets } from "@/stores/ui-slice";
 import { useBoundStore } from "@/stores/use-bound-store";
 import type {
@@ -8,8 +7,10 @@ import type {
   PropertyType,
   Schema,
 } from "@/types/graph";
+import { Trash } from "lucide-react";
 import { useMemo } from "react";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { ScrollArea } from "../ui/scroll-area";
@@ -73,7 +74,7 @@ export function SelectionView({ type, data, schema }: SelectionViewProps) {
   const selectedCount = data.length;
 
   return (
-    <ScrollArea className="h-full">
+    <ScrollArea className="[&_[data-slot=scroll-area-viewport]>div]:block!">
       <div className="space-y-6 p-4 h-full">
         <Header type={type} data={data} />
         <div className="space-y-4">
@@ -108,10 +109,7 @@ export function SelectionView({ type, data, schema }: SelectionViewProps) {
                               : String(value)
                         }
                         placeholder={isMixed ? "Mixed" : ""}
-                        className={cn(
-                          isMixed &&
-                            "placeholder:italic placeholder:text-muted-foreground",
-                        )}
+                        className="w-full"
                         onChange={(e) =>
                           handleUpdate(key as string, e.target.value)
                         }
@@ -143,18 +141,35 @@ function Header({
   data: NodeData[] | EdgeData[];
 }) {
   const Icon = itemAssets[type].icon;
+  const deleteEntities = useBoundStore((state) => state.deleteEntities);
+
+  const handleDelete = () => {
+    const ids = data.map((item) => item._id);
+    deleteEntities(type, ids);
+  };
   return (
-    <div className="flex items-center gap-2">
-      <Icon className={cn("size-4")} />
-      <div className="font-medium text-base truncate">
-        {data.length === 1 ? (
-          (data[0]._label as string)
-        ) : (
-          <span className="italic ">
-            {data.length} {type}s selected
-          </span>
-        )}
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <Icon className="size-4 shrink-0" />
+        <div className="font-medium text-base truncate h-6">
+          {data.length === 1 ? (
+            (data[0]._label as string)
+          ) : (
+            <span className="italic ">
+              {data.length} {type}s selected
+            </span>
+          )}
+        </div>
       </div>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+        onClick={handleDelete}
+        title={`Delete selected ${type}s`}
+      >
+        <Trash className="size-4" />
+      </Button>
     </div>
   );
 }

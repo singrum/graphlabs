@@ -10,7 +10,7 @@ export default function GraphData() {
   );
 
   return (
-    <ScrollArea className="overflow-auto h-full">
+    <ScrollArea className="[&_[data-slot=scroll-area-viewport]>div]:block! h-full">
       <Tabs
         value={dataMenu.toString()}
         onValueChange={(e) => {

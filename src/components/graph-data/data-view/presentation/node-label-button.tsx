@@ -20,7 +20,7 @@ export default function NodeLabelButton({
     <Button
       variant="ghost"
       className={cn(
-        "w-full justify-start group-hover:bg-accent dark:group-hover:bg-accent/50",
+        "w-full justify-start group-hover:bg-accent dark:group-hover:bg-accent/50 ",
         {
           "bg-accent dark:bg-foreground/15 group-hover:bg-accent dark:hover:bg-foreground/15":
             selectedNodeIds.has(id),
@@ -38,7 +38,7 @@ export default function NodeLabelButton({
       }}
     >
       <itemAssets.node.icon />
-      {label}
+      <span className="truncate flex-1 text-left">{label}</span>
     </Button>
   );
 }

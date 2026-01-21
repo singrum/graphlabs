@@ -16,11 +16,13 @@ import {
 } from "./components/ui/resizable";
 import { Separator } from "./components/ui/separator";
 import { useBoundStore } from "./stores/use-bound-store";
+import { useGraphHotkeys } from "./hooks/use-graph-hot-keys";
 
 export default function App() {
   const [openLeftbar] = useBoundStore(
     useShallow((state) => [state.openLeftbar]),
   );
+  useGraphHotkeys();
 
   return (
     <div className="h-dvh w-dvw break-all">

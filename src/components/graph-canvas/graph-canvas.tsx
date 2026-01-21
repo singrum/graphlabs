@@ -63,7 +63,6 @@ export default function GraphCanvas() {
     const stage = e.target.getStage();
     if (!stage || e.target !== stage) return;
 
-    // [수정] Panning 중이 아니고, tool이 "select"일 때만 영역 선택 시작
     if (!isSpacePressed && tool === "select") {
       startSelection(stage);
     }

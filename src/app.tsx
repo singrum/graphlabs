@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/react/shallow";
 import GraphCanvas from "./components/graph-canvas/graph-canvas";
 import GraphData from "./components/graph-data/graph-data";
 import Leftbar from "./components/leftbar/leftbar";
@@ -15,8 +16,10 @@ import { Separator } from "./components/ui/separator";
 import { useBoundStore } from "./stores/use-bound-store";
 
 export default function App() {
-  const openLeftbar = useBoundStore((state) => state.openLeftbar);
-  const isSelected = useBoundStore((state) => state.selected !== null);
+  const [openLeftbar, isSelected] = useBoundStore(
+    useShallow((state) => [state.openLeftbar, state.selected !== null]),
+  );
+
   return (
     <div className="h-dvh w-dvw break-all">
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">

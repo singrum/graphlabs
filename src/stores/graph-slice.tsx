@@ -1,3 +1,4 @@
+import { sampleGraph } from "@/lib/sample-graphs";
 import type { EdgeData, Graph, NodeData } from "@/types/graph";
 import type { CircleConfig } from "konva/lib/shapes/Circle";
 import { v4 } from "uuid";
@@ -28,13 +29,7 @@ export const createGraphSlice: StateCreator<
   [],
   GraphSlice
 > = (set, get) => ({
-  graph: {
-    title: "New Graph",
-    nodes: new Map(),
-    edges: new Map(),
-    succ: new Map(),
-    pred: new Map(),
-  },
+  graph: sampleGraph,
 
   setTitle: (title) =>
     set((state) => {
@@ -55,7 +50,7 @@ export const createGraphSlice: StateCreator<
       if (!state.graph.succ.has(id)) state.graph.succ.set(id, new Map());
       if (!state.graph.pred.has(id)) state.graph.pred.set(id, new Map());
     });
-    get().setSelectedIds([id]);
+    get().setSelectedNodes([id]);
   },
 
   updateNodeConfig: (id, config) =>

@@ -9,7 +9,7 @@ export const GraphNode = memo(({ id }: { id: string }) => {
     node,
     tool,
     isSelected,
-    setSelectedIds,
+    setSelectedNodes,
     updateNodeConfig,
     addEdge,
     setConnectingNodeId,
@@ -20,8 +20,8 @@ export const GraphNode = memo(({ id }: { id: string }) => {
     useShallow((state) => [
       state.graph.nodes.get(id),
       state.tool,
-      state.selectedIds.has(id),
-      state.setSelectedIds, // 선택 영역 업데이트 함수
+      state.selectedNodeIds.has(id),
+      state.setSelectedNodes, // 선택 영역 업데이트 함수
       state.updateNodeConfig,
       state.addEdge,
       state.setConnectingNodeId,
@@ -41,11 +41,11 @@ export const GraphNode = memo(({ id }: { id: string }) => {
       setConnectingNodeId(id);
     } else if (tool == "node") {
       if (!isSelected) {
-        setSelectedIds([id]);
+        setSelectedNodes([id]);
       }
     } else {
       if (!isSelected) {
-        setSelectedIds([id]);
+        setSelectedNodes([id]);
       }
     }
   };

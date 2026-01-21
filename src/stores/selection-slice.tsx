@@ -1,15 +1,20 @@
+// stores/selection-slice.ts
+
 import type { StateCreator } from "zustand";
 import type { BoundStore } from "./use-bound-store";
 
-// stores/selection-slice.ts
 export interface SelectionSlice {
-  // Key: 노드 ID, Value: 선택 여부 (true)
-  selectedIds: Map<string, boolean>;
+  // 노드와 엣지 선택 상태를 각각 관리
+  selectedNodeIds: Map<string, boolean>;
+  selectedEdgeIds: Map<string, boolean>;
   selectionRect: { x1: number; y1: number; x2: number; y2: number } | null;
 
   // 액션들
-  setSelectedIds: (ids: string[]) => void;
-  toggleSelection: (id: string) => void; // 개별 선택 반전용
+  setSelectedEntities: (nodeIds: string[], edgeIds: string[]) => void;
+  setSelectedNodes: (ids: string[]) => void;
+  setSelectedEdges: (ids: string[]) => void;
+  toggleNodeSelection: (id: string) => void;
+  toggleEdgeSelection: (id: string) => void;
   clearSelection: () => void;
   setSelectionRect: (
     rect: { x1: number; y1: number; x2: number; y2: number } | null,
@@ -22,27 +27,47 @@ export const createSelectionSlice: StateCreator<
   [],
   SelectionSlice
 > = (set) => ({
-  selectedIds: new Map(),
+  selectedNodeIds: new Map(),
+  selectedEdgeIds: new Map(),
   selectionRect: null,
 
-  setSelectedIds: (ids) =>
+  // 노드와 엣지를 한꺼번에 설정 (Marquee 선택 시 유용)
+  setSelectedEntities: (nodeIds, edgeIds) =>
     set((state) => {
-      state.selectedIds.clear();
-      ids.forEach((id) => state.selectedIds.set(id, true));
+      state.selectedNodeIds.clear();
+      state.selectedEdgeIds.clear();
+      nodeIds.forEach((id) => state.selectedNodeIds.set(id, true));
+      edgeIds.forEach((id) => state.selectedEdgeIds.set(id, true));
     }),
 
-  toggleSelection: (id) =>
+  setSelectedNodes: (ids) =>
     set((state) => {
-      if (state.selectedIds.has(id)) {
-        state.selectedIds.delete(id);
-      } else {
-        state.selectedIds.set(id, true);
-      }
+      state.selectedNodeIds.clear();
+      ids.forEach((id) => state.selectedNodeIds.set(id, true));
+    }),
+
+  setSelectedEdges: (ids) =>
+    set((state) => {
+      state.selectedEdgeIds.clear();
+      ids.forEach((id) => state.selectedEdgeIds.set(id, true));
+    }),
+
+  toggleNodeSelection: (id) =>
+    set((state) => {
+      if (state.selectedNodeIds.has(id)) state.selectedNodeIds.delete(id);
+      else state.selectedNodeIds.set(id, true);
+    }),
+
+  toggleEdgeSelection: (id) =>
+    set((state) => {
+      if (state.selectedEdgeIds.has(id)) state.selectedEdgeIds.delete(id);
+      else state.selectedEdgeIds.set(id, true);
     }),
 
   clearSelection: () =>
     set((state) => {
-      state.selectedIds.clear();
+      state.selectedNodeIds.clear();
+      state.selectedEdgeIds.clear();
     }),
 
   setSelectionRect: (rect) =>

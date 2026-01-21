@@ -1,5 +1,5 @@
 import { useBoundStore } from "@/stores/use-bound-store";
-import { PropsView } from "./props_view";
+import { PropsView } from "./props-view";
 
 export default function EdgeProps({ id }: { id: string }) {
   const edge = useBoundStore((e) => e.graph.edges.get(id)!);

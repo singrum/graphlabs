@@ -12,8 +12,8 @@ export default function NodeLabelButton({
   id: string;
 } & ComponentProps<"button">) {
   const label = useBoundStore((state) => state.graph.nodes.get(id)!._label);
-  const [selectedIds, setSelectedIds] = useBoundStore(
-    useShallow((state) => [state.selectedIds, state.setSelectedIds]),
+  const [selectedNodeIds, setSelectedNodes] = useBoundStore(
+    useShallow((state) => [state.selectedNodeIds, state.setSelectedNodes]),
   );
 
   return (
@@ -23,18 +23,18 @@ export default function NodeLabelButton({
         "w-full justify-start group-hover:bg-accent dark:group-hover:bg-accent/50",
         {
           "bg-accent dark:bg-accent group-hover:bg-accent dark:hover:bg-accent":
-            selectedIds.has(id),
+            selectedNodeIds.has(id),
         },
         className,
       )}
       onClick={() => {
-        if (selectedIds.has(id)) {
-          if (selectedIds.size === 1) {
-            setSelectedIds([]);
+        if (selectedNodeIds.has(id)) {
+          if (selectedNodeIds.size === 1) {
+            setSelectedNodes([]);
             return;
           }
         }
-        setSelectedIds([id]);
+        setSelectedNodes([id]);
       }}
     >
       <itemAssets.node.icon />

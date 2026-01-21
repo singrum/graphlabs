@@ -1,3 +1,13 @@
+export type PropertyType =
+  | "text"
+  | "number"
+  | "boolean"
+  | "color"
+  | "node"
+  | "edge";
+
+export type Schema = Record<string, PropertyType>;
+
 export type NodeData = {
   _id: string;
   _x: number;
@@ -6,7 +16,7 @@ export type NodeData = {
   _label: string;
 
   // 추가 속성
-  [key: string]: unknown;
+  [key: string]: string | number | boolean | undefined;
 };
 
 export type EdgeData = {
@@ -16,7 +26,7 @@ export type EdgeData = {
   _target: string; // 끝 노드 ID
 
   // 추가 속성
-  [key: string]: unknown;
+  [key: string]: string | number | boolean | undefined;
 };
 
 export type Nodes = Map<string, NodeData>;
@@ -27,6 +37,12 @@ export type Graph = {
   title: string;
   nodes: Nodes;
   edges: Edges;
+  nodeSchema: Schema;
+  edgeSchema: Schema;
   succ: AdjacencyMap;
   pred: AdjacencyMap;
+};
+
+export type Nullable<T> = {
+  [P in keyof T]: T[P] | null;
 };

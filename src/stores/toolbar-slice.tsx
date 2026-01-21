@@ -15,6 +15,6 @@ export const createToolbarSlice: StateCreator<
   [],
   ToolbarSlice
 > = (set) => ({
-  tool: "node",
+  tool: "select",
   setTool: (tool: Tool) => set(() => ({ tool })),
 });

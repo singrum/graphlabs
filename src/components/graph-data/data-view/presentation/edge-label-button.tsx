@@ -16,9 +16,9 @@ export default function EdgeLabelButton({
   return (
     <Button
       className={cn(
-        "w-full justify-start group-hover:bg-accent dark:group-hover:bg-accent/50",
+        "w-full justify-start hover:bg-accent dark:hover:bg-accent/50",
         {
-          "bg-accent dark:bg-accent hover:bg-accent dark:group-hover:bg-accent":
+          "bg-accent dark:bg-foreground/15 hover:bg-accent dark:hover:bg-foreground/15":
             selectedEdgeIds.has(id),
         },
         className,

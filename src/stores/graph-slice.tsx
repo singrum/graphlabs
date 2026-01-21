@@ -1,9 +1,23 @@
 import { sampleGraph } from "@/lib/sample-graphs";
-import type { EdgeData, Graph, NodeData } from "@/types/graph";
+import type { EdgeData, Graph, NodeData, Schema } from "@/types/graph";
 import type { CircleConfig } from "konva/lib/shapes/Circle";
 import { v4 } from "uuid";
 import type { StateCreator } from "zustand";
 import type { BoundStore } from "./use-bound-store";
+const initialNodeSchema: Schema = {
+  _id: "text",
+  _label: "text",
+  _color: "color",
+  _x: "number",
+  _y: "number",
+};
+
+const initialEdgeSchema: Schema = {
+  _id: "text",
+  _label: "text",
+  _source: "node",
+  _target: "node",
+};
 
 let nodeCnt = 0;
 let edgeCnt = 0;
@@ -29,7 +43,11 @@ export const createGraphSlice: StateCreator<
   [],
   GraphSlice
 > = (set, get) => ({
-  graph: sampleGraph,
+  graph: {
+    ...sampleGraph,
+    nodeSchema: initialNodeSchema,
+    edgeSchema: initialEdgeSchema,
+  },
 
   setTitle: (title) =>
     set((state) => {

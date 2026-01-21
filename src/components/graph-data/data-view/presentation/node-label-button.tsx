@@ -22,7 +22,7 @@ export default function NodeLabelButton({
       className={cn(
         "w-full justify-start group-hover:bg-accent dark:group-hover:bg-accent/50",
         {
-          "bg-accent dark:bg-accent group-hover:bg-accent dark:hover:bg-accent":
+          "bg-accent dark:bg-foreground/15 group-hover:bg-accent dark:hover:bg-foreground/15":
             selectedNodeIds.has(id),
         },
         className,

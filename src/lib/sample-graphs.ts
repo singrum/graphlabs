@@ -1,5 +1,6 @@
 export const sampleGraph = {
   title: "New Graph",
+  
   nodes: new Map([
     [
       "d1025e9e-3a92-4a70-acf9-ed5da6136389",

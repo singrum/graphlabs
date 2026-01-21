@@ -25,10 +25,10 @@ export default function AdjView({ adj }: { adj: AdjacencyMap }) {
 
             <NodeLabelButton id={key1} className={cn("has-[>svg]:pl-8")} />
           </div>
-          <CollapsibleContent className="pt-1">
+          <CollapsibleContent className="pt-1 space-y-1">
             {[...adj.get(key1)!.keys()].map((key2) => (
               <Collapsible key={key2}>
-                <div className="relative w-full group space-y-1">
+                <div className="relative w-full group">
                   <CollapsibleTrigger asChild>
                     <DataCollapsibleButton className="absolute left-4 top-1/2 -translate-y-1/2 h-full hover:[&_svg]:text-accent-foreground hover:bg-transparent dark:hover:bg-transparent">
                       <ChevronRight className="text-muted-foreground size-3 " />

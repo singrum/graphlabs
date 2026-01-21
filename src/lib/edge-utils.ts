@@ -32,8 +32,8 @@ export const getSelfLoopPoints = (
 ) => {
   // 1. 인덱스에 따라 기본 각도를 변경 (예: 45도 간격으로 분산)
   // index가 0이면 -45도, 1이면 -90도, 2이면 0도... 이런 식으로 배치됩니다.
-  const angleStep = Math.PI / 4;
-  const baseAngle = -Math.PI / 4 - index * angleStep;
+
+  const baseAngle = -Math.PI / 4 - index * 1;
 
   // 고리의 크기 (기존 유지)
   const loopHeight = radius * 3.5;

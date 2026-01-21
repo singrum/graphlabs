@@ -51,7 +51,7 @@ export const GraphNode = memo(({ id }: { id: string }) => {
   };
 
   const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (tool === "edge" && connectingNodeId && connectingNodeId !== id) {
+    if (tool === "edge" && connectingNodeId) {
       e.cancelBubble = true;
       addEdge(connectingNodeId, id);
       resetEdgeEditor();

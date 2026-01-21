@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { itemAssets } from "@/stores/ui-slice";
+import { useBoundStore } from "@/stores/use-bound-store";
 import type {
   EdgeData,
   NodeData,
@@ -21,6 +22,7 @@ interface SelectionViewProps {
 }
 
 export function SelectionView({ type, data, schema }: SelectionViewProps) {
+  const updateEntities = useBoundStore((e) => e.updateEntities);
   const commonData = useMemo(() => {
     if (data.length === 0) return null;
     if (data.length === 1) return data[0];
@@ -50,6 +52,24 @@ export function SelectionView({ type, data, schema }: SelectionViewProps) {
     return result;
   }, [data, schema]);
 
+  const handleUpdate = (key: string, rawValue: string) => {
+    const propType = schema[key];
+    let parsedValue: string | number | boolean = rawValue;
+
+    // 1. 타입별 형변환
+    if (propType === "number") {
+      parsedValue = rawValue === "" ? 0 : Number(rawValue);
+      if (isNaN(parsedValue)) return; // 숫자가 아니면 중단
+    }
+
+    // 2. 스토어 액션 호출
+    updateEntities(
+      type,
+      data.map((item) => item._id),
+      { [key]: parsedValue },
+    );
+  };
+
   const selectedCount = data.length;
 
   return (
@@ -75,14 +95,12 @@ export function SelectionView({ type, data, schema }: SelectionViewProps) {
                 <div key={key as string} className="flex flex-col gap-1.5">
                   <Label className="flex flex-col gap-2">
                     <LabelHeader labelKey={key as string} propType={propType} />
-                    {propType == "color" ||
-                    propType == "text" ||
-                    propType == "number" ? (
+                    {propType === "color" ||
+                    propType === "text" ||
+                    propType === "number" ? (
                       <Input
-                        // 스키마 타입에 따른 Input 속성 제어
                         type={propType}
                         value={
-                          // 1. 우선 value가 null(Mixed)인지 체크
                           value === null
                             ? ""
                             : propType === "number"
@@ -90,21 +108,22 @@ export function SelectionView({ type, data, schema }: SelectionViewProps) {
                               : String(value)
                         }
                         placeholder={isMixed ? "Mixed" : ""}
-                        className={
-                          isMixed
-                            ? "placeholder:italic placeholder:text-muted-foreground"
-                            : ""
+                        className={cn(
+                          isMixed &&
+                            "placeholder:italic placeholder:text-muted-foreground",
+                        )}
+                        onChange={(e) =>
+                          handleUpdate(key as string, e.target.value)
                         }
-                        onChange={(e) => {
-                          // 일괄 업데이트 로직 연결 (예정)
-                          console.log(
-                            `Update ${type} [${key as string}] to:`,
-                            e.target.value,
-                          );
-                        }}
                       />
                     ) : propType === "node" ? (
-                      <ItemSelect type={propType} id={value as string} />
+                      <ItemSelect
+                        type={propType}
+                        id={value as string}
+                        onValueChange={(newId) =>
+                          handleUpdate(key as string, newId)
+                        }
+                      />
                     ) : null}
                   </Label>
                 </div>

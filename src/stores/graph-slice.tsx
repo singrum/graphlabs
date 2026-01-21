@@ -1,3 +1,4 @@
+import { addToAdjacency, removeFromAdjacency } from "@/lib/graph-utils";
 import { sampleGraph } from "@/lib/sample-graphs";
 import type { EdgeData, Graph, NodeData, Schema } from "@/types/graph";
 import type { CircleConfig } from "konva/lib/shapes/Circle";
@@ -35,6 +36,12 @@ export interface GraphSlice {
   // 엣지 액션
   addEdge: (sourceId: string, targetId: string) => void;
   deleteEdge: (edgeId: string) => void;
+
+  updateEntities: (
+    type: "node" | "edge",
+    ids: string[],
+    data: Partial<NodeData | EdgeData>,
+  ) => void;
 }
 
 export const createGraphSlice: StateCreator<
@@ -165,5 +172,40 @@ export const createGraphSlice: StateCreator<
 
       // 3. 메인 맵에서 제거
       state.graph.edges.delete(edgeId);
+    }),
+
+  updateEntities: (type, ids, partialData) =>
+    set((state) => {
+      const { nodes, edges, succ, pred } = state.graph;
+
+      if (type === "node") {
+        const data = partialData as Partial<NodeData>;
+        ids.forEach((id) => {
+          const existing = nodes.get(id)!;
+          nodes.set(id, { ...existing, ...data });
+        });
+      } else {
+        const data = partialData as Partial<EdgeData>;
+        ids.forEach((id) => {
+          const edge = edges.get(id)!;
+
+          const nextSource = data._source ?? edge._source;
+          const nextTarget = data._target ?? edge._target;
+
+          // 연결 정보가 변경된 경우에만 인접 리스트 동기화
+          if (nextSource !== edge._source || nextTarget !== edge._target) {
+            // 1. 기존 연결 제거
+            removeFromAdjacency(succ, edge._source, edge._target, id);
+            removeFromAdjacency(pred, edge._target, edge._source, id);
+
+            // 2. 새로운 연결 추가
+            addToAdjacency(succ, nextSource, nextTarget, id);
+            addToAdjacency(pred, nextTarget, nextSource, id);
+          }
+
+          // 3. 엣지 데이터 업데이트
+          edges.set(id, { ...edge, ...data });
+        });
+      }
     }),
 });

@@ -12,9 +12,11 @@ import { useMemo } from "react";
 export default function ItemSelect({
   type,
   id,
+  onValueChange, // 콜백 추가
 }: {
   type: "node" | "edge";
   id: string | null;
+  onValueChange: (id: string) => void;
 }) {
   const Icon = itemAssets[type].icon;
 
@@ -33,12 +35,7 @@ export default function ItemSelect({
   }, [collection]);
 
   return (
-    <Select
-      value={currentItem?._id || ""}
-      onValueChange={(newId) => {
-        console.log(`Changed to ${newId}`);
-      }}
-    >
+    <Select value={currentItem?._id || ""} onValueChange={onValueChange}>
       <SelectTrigger className="w-full">
         <SelectValue placeholder="mixed" />
       </SelectTrigger>

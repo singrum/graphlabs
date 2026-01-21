@@ -8,8 +8,9 @@ export interface UISlice {
   openLeftbar: boolean;
   setOpenLeftbar: (openLeftbar: boolean) => void;
 
-  selected: { type: "node" | "edge"; id: string } | null;
-  setSelected: (selected: { type: "node" | "edge"; id: string } | null) => void;
+  openRightbar: boolean;
+  setOpenRightbar: (openRightbar: boolean) => void;
+
 }
 
 export const itemAssets = {
@@ -30,7 +31,9 @@ export const createUISlice: StateCreator<
 > = (set) => ({
   openLeftbar: true,
   setOpenLeftbar: (openLeftbar: boolean) => set(() => ({ openLeftbar })),
-  selected: null,
-  setSelected: (selected: { type: "node" | "edge"; id: string } | null) =>
-    set(() => ({ selected })),
+
+  openRightbar: true,
+  setOpenRightbar: (openRightbar: boolean) => set(() => ({ openRightbar })),
+
+  
 });

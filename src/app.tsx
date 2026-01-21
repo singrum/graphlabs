@@ -3,8 +3,10 @@ import GraphCanvas from "./components/graph-canvas/graph-canvas";
 import GraphData from "./components/graph-data/graph-data";
 import Leftbar from "./components/leftbar/leftbar";
 import MetaSection from "./components/meta-section/meta-section";
-import PropSection from "./components/prop-section/prop-section";
 
+import Rightbar from "./components/rightbar/rightbar";
+import EdgeSelection from "./components/selection-section/edge-selection";
+import NodeSelection from "./components/selection-section/node-selection";
 import { ThemeProvider } from "./components/theme-provider";
 import Toolbar from "./components/toolbar/toolbar";
 import {
@@ -16,8 +18,8 @@ import { Separator } from "./components/ui/separator";
 import { useBoundStore } from "./stores/use-bound-store";
 
 export default function App() {
-  const [openLeftbar, isSelected] = useBoundStore(
-    useShallow((state) => [state.openLeftbar, state.selected !== null]),
+  const [openLeftbar] = useBoundStore(
+    useShallow((state) => [state.openLeftbar]),
   );
 
   return (
@@ -30,22 +32,23 @@ export default function App() {
           {openLeftbar && (
             <>
               <Separator />
-              {isSelected ? (
-                <ResizablePanelGroup orientation="vertical">
-                  <ResizablePanel minSize={100} defaultSize={60}>
-                    <GraphData />
-                  </ResizablePanel>
-                  <ResizableHandle />
-                  <ResizablePanel minSize={100} defaultSize={60}>
-                    <PropSection />
-                  </ResizablePanel>
-                </ResizablePanelGroup>
-              ) : (
-                <GraphData />
-              )}
+              <GraphData />
             </>
           )}
         </Leftbar>
+        <Rightbar>
+          <ResizablePanelGroup orientation="vertical">
+            <ResizablePanel minSize={100} defaultSize={30}>
+              <NodeSelection />
+            </ResizablePanel>
+
+            <ResizableHandle />
+
+            <ResizablePanel minSize={100} defaultSize={30}>
+              <EdgeSelection />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </Rightbar>
         <Toolbar />
       </ThemeProvider>
     </div>

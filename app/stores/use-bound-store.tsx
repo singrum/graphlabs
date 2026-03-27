@@ -1,3 +1,4 @@
+import type { Graph, GraphMeta } from "@/types/graph"
 import { createContext, useContext, useState, type ReactNode } from "react"
 import { create, useStore } from "zustand"
 import { immer } from "zustand/middleware/immer"
@@ -18,10 +19,16 @@ export type BoundStore = GraphSlice &
   UISlice &
   SelectionSlice &
   SettingsSlice
-export const createBoundStore = () => {
+export const createBoundStore = ({
+  graphMeta,
+  graph,
+}: {
+  graphMeta: GraphMeta
+  graph: Graph
+}) => {
   return create<BoundStore>()(
     immer((...a) => ({
-      ...createGraphSlice(...a),
+      ...createGraphSlice({ graphMeta, graph })(...a),
       ...createToolbarSlice(...a),
       ...createEdgeEditorSlice(...a),
       ...createDataSlice(...a),
@@ -40,10 +47,17 @@ export const BoundStoreContext = createContext<BoundStoreApi | undefined>(
 
 export interface BoundStoreProviderProps {
   children: ReactNode
+  initialData: {
+    graphMeta: GraphMeta
+    graph: Graph
+  }
 }
 
-export const BoundStoreProvider = ({ children }: BoundStoreProviderProps) => {
-  const [store] = useState(() => createBoundStore())
+export const BoundStoreProvider = ({
+  children,
+  initialData,
+}: BoundStoreProviderProps) => {
+  const [store] = useState(() => createBoundStore(initialData))
   return (
     <BoundStoreContext.Provider value={store}>
       {children}

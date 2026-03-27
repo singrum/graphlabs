@@ -13,11 +13,37 @@ import {
 } from "@/components/ui/resizable"
 import { Separator } from "@/components/ui/separator"
 import { useGraphHotkeys } from "@/hooks/use-graph-hot-keys"
-import { useBoundStore } from "@/stores/use-bound-store"
+import { BoundStoreProvider, useBoundStore } from "@/stores/use-bound-store"
+import type { Graph, GraphMeta } from "@/types/graph"
 
+import { db } from "@/lib/db"
+import { useLoaderData } from "react-router"
 import { useShallow } from "zustand/react/shallow"
+import type { Route } from "./+types"
+
+export async function clientLoader({
+  params,
+}: Route.ClientLoaderArgs): Promise<{
+  graphMeta: GraphMeta
+  graph: Graph
+} | null> {
+  const { graph: id } = params
+  const result = await db.getGraph(id)
+  return result
+}
+
+clientLoader.hydrate = true
 
 export default function Index() {
+  const initialData = useLoaderData()
+  return (
+    <BoundStoreProvider initialData={initialData}>
+      <IndexInner />
+    </BoundStoreProvider>
+  )
+}
+
+function IndexInner() {
   const [openLeftbar] = useBoundStore(
     useShallow((state) => [state.openLeftbar])
   )

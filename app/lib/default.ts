@@ -1,6 +1,23 @@
+import type { Schema } from "@/types/graph"
+
+export const defaultNodeSchema: Schema = {
+  _id: "text",
+  _label: "text",
+  _color: "color",
+  _x: "number",
+  _y: "number",
+}
+
+export const defaultEdgeSchema: Schema = {
+  _id: "text",
+  _label: "text",
+  _source: "node",
+  _target: "node",
+}
+
 export const sampleGraph = {
   title: "New Graph",
-  
+
   nodes: new Map([
     [
       "d1025e9e-3a92-4a70-acf9-ed5da6136389",
@@ -245,4 +262,4 @@ export const sampleGraph = {
       ]),
     ],
   ]),
-};
+}

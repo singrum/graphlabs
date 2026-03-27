@@ -1,8 +1,8 @@
-import { useBoundStore } from "@/stores/use-bound-store";
-import Konva from "konva";
-import { memo } from "react";
-import { Circle, Group, Text } from "react-konva";
-import { useShallow } from "zustand/react/shallow";
+import { useBoundStore } from "@/stores/use-bound-store"
+import Konva from "konva"
+import { memo } from "react"
+import { Circle, Group, Text } from "react-konva"
+import { useShallow } from "zustand/react/shallow"
 
 export const GraphNode = memo(({ id }: { id: string }) => {
   // 1. 모든 Hook은 최상단에서 호출 (ESLint 규칙 준수)
@@ -29,31 +29,31 @@ export const GraphNode = memo(({ id }: { id: string }) => {
       state.connectingNodeId,
       state.resetEdgeEditor,
       state.nodeRadius,
-    ]),
-  );
+    ])
+  )
 
   // 2. [가드 로직] 데이터가 없으면 즉시 null 반환 (Hook 호출 이후에 위치)
-  if (!node) return null;
+  if (!node) return null
 
   // 3. 이벤트 핸들러 정의
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    e.cancelBubble = true;
+    e.cancelBubble = true
 
     if (tool === "edge") {
-      setConnectingNodeId(id);
+      setConnectingNodeId(id)
     } else {
       // node 모드 혹은 select 모드일 때
-      setSelectedEntities([id], []);
+      setSelectedEntities([id], [])
     }
-  };
+  }
 
   const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (tool === "edge" && connectingNodeId) {
-      e.cancelBubble = true;
-      addEdge(connectingNodeId, id);
-      resetEdgeEditor();
+      e.cancelBubble = true
+      addEdge(connectingNodeId, id)
+      resetEdgeEditor()
     }
-  };
+  }
 
   return (
     <Group
@@ -67,7 +67,7 @@ export const GraphNode = memo(({ id }: { id: string }) => {
         updateEntities("node", [id], {
           _x: e.target.x(),
           _y: e.target.y(),
-        });
+        })
       }}
       listening={true}
     >
@@ -90,5 +90,5 @@ export const GraphNode = memo(({ id }: { id: string }) => {
         listening={false}
       />
     </Group>
-  );
-});
+  )
+})

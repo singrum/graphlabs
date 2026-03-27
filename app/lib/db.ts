@@ -38,6 +38,10 @@ export class MyDatabase extends Dexie {
 
     return { graphMeta, graph: graph.graph }
   }
+  saveGraph = async (graphMeta: GraphMeta, graph: Graph) => {
+    await this.graphMeta.put(graphMeta)
+    await this.graph.put({ id: graphMeta.id, graph })
+  }
 }
 
 export const db = new MyDatabase()

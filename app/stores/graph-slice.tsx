@@ -1,9 +1,11 @@
+import { db } from "@/lib/db"
 import { addToAdjacency, removeFromAdjacency } from "@/lib/graph-utils"
 import type { EdgeData, Graph, GraphMeta, NodeData } from "@/types/graph"
+import lodash from "lodash"
 import { v4 } from "uuid"
 import type { StateCreator } from "zustand"
 import type { BoundStore } from "./use-bound-store"
-
+const { debounce } = lodash
 let nodeCnt = 0
 let edgeCnt = 0
 
@@ -11,6 +13,7 @@ export interface GraphSlice {
   graphMeta: GraphMeta
   graph: Graph
 
+  sync: () => Promise<void>
   // 노드 액션
   addNode: (x: number, y: number) => void
 
@@ -36,215 +39,238 @@ export const createGraphSlice =
   (
     initialData: GraphInitialData
   ): StateCreator<BoundStore, [["zustand/immer", never]], [], GraphSlice> =>
-  (set, get) => ({
-    graph: initialData.graph,
-    graphMeta: initialData.graphMeta,
-    addNode: (x, y) => {
-      const id = v4()
-      set((state) => {
-        state.graph.nodes.set(id, {
-          _id: id,
-          ...{ _label: `Node ${++nodeCnt}` },
-          _color: "#00a2ff",
-          _x: x,
-          _y: y,
-        } as NodeData)
-        // 인접 리스트 초기화 (옵션)
-        if (!state.graph.succ.has(id)) state.graph.succ.set(id, new Map())
-        if (!state.graph.pred.has(id)) state.graph.pred.set(id, new Map())
-      })
-      get().setSelectedNodes([id])
-    },
+  (set, get) => {
+    const debouncedSync = debounce(async () => {
+      const { graphMeta, graph } = get()
+      await db.saveGraph(graphMeta, graph)
+      console.log("IndexedDB Synced (Debounced)")
+    }, 500)
+    return {
+      graphMeta: initialData.graphMeta,
+      graph: initialData.graph,
 
-    deleteNode: (nodeId) =>
-      set((state) => {
-        // 1. 해당 노드와 연결된 모든 엣지 식별 및 삭제
-        // 나가는 엣지들
-        const targets = state.graph.succ.get(nodeId)
-        if (targets) {
-          targets.forEach((edgeIds, targetId) => {
-            edgeIds.forEach((edgeId) => state.graph.edges.delete(edgeId))
-            // 상대방(target)의 pred에서도 제거
-            state.graph.pred.get(targetId)?.delete(nodeId)
-          })
-        }
+      sync: async () => {
+        debouncedSync()
+      },
 
-        // 들어오는 엣지들
-        const sources = state.graph.pred.get(nodeId)
-        if (sources) {
-          sources.forEach((edgeIds, sourceId) => {
-            edgeIds.forEach((edgeId) => state.graph.edges.delete(edgeId))
-            // 상대방(source)의 succ에서도 제거
-            state.graph.succ.get(sourceId)?.delete(nodeId)
-          })
-        }
+      addNode: (x, y) => {
+        const id = v4()
+        set((state) => {
+          state.graph.nodes.set(id, {
+            _id: id,
+            ...{ _label: `Node ${++nodeCnt}` },
+            _color: "#00a2ff",
+            _x: x,
+            _y: y,
+          } as NodeData)
+          // 인접 리스트 초기화 (옵션)
+          if (!state.graph.succ.has(id)) state.graph.succ.set(id, new Map())
+          if (!state.graph.pred.has(id)) state.graph.pred.set(id, new Map())
+        })
+        get().setSelectedNodes([id])
+        get().sync()
+      },
 
-        // 2. 인접 리스트에서 노드 엔트리 자체를 삭제
-        state.graph.succ.delete(nodeId)
-        state.graph.pred.delete(nodeId)
+      deleteNode: (nodeId) => {
+        set((state) => {
+          // 1. 해당 노드와 연결된 모든 엣지 식별 및 삭제
+          // 나가는 엣지들
+          const targets = state.graph.succ.get(nodeId)
+          if (targets) {
+            targets.forEach((edgeIds, targetId) => {
+              edgeIds.forEach((edgeId) => state.graph.edges.delete(edgeId))
+              // 상대방(target)의 pred에서도 제거
+              state.graph.pred.get(targetId)?.delete(nodeId)
+            })
+          }
 
-        // 3. 노드 삭제
-        state.graph.nodes.delete(nodeId)
-      }),
+          // 들어오는 엣지들
+          const sources = state.graph.pred.get(nodeId)
+          if (sources) {
+            sources.forEach((edgeIds, sourceId) => {
+              edgeIds.forEach((edgeId) => state.graph.edges.delete(edgeId))
+              // 상대방(source)의 succ에서도 제거
+              state.graph.succ.get(sourceId)?.delete(nodeId)
+            })
+          }
 
-    addEdge: (source, target) =>
-      set((state) => {
-        const edgeId = v4()
-        const newEdge: EdgeData = {
-          _id: edgeId,
-          _source: source,
-          _target: target,
-          _label: `Edge ${++edgeCnt}`,
-        }
+          // 2. 인접 리스트에서 노드 엔트리 자체를 삭제
+          state.graph.succ.delete(nodeId)
+          state.graph.pred.delete(nodeId)
 
-        // 1. Edges 맵에 추가
-        state.graph.edges.set(edgeId, newEdge)
+          // 3. 노드 삭제
+          state.graph.nodes.delete(nodeId)
+        })
+        get().sync()
+      },
 
-        // 2. succ 업데이트 (source -> target)
-        if (!state.graph.succ.has(source))
-          state.graph.succ.set(source, new Map())
-        const sourceMap = state.graph.succ.get(source)!
-        if (!sourceMap.has(target)) sourceMap.set(target, [])
-        sourceMap.get(target)!.push(edgeId)
+      addEdge: (source, target) => {
+        ;(set((state) => {
+          const edgeId = v4()
+          const newEdge: EdgeData = {
+            _id: edgeId,
+            _source: source,
+            _target: target,
+            _label: `Edge ${++edgeCnt}`,
+          }
 
-        // 3. pred 업데이트 (target -> source)
-        if (!state.graph.pred.has(target))
-          state.graph.pred.set(target, new Map())
-        const targetMap = state.graph.pred.get(target)!
-        if (!targetMap.has(source)) targetMap.set(source, [])
-        targetMap.get(source)!.push(edgeId)
-      }),
+          // 1. Edges 맵에 추가
+          state.graph.edges.set(edgeId, newEdge)
 
-    deleteEdge: (edgeId) =>
-      set((state) => {
-        const edge = state.graph.edges.get(edgeId)
-        if (!edge) return
+          // 2. succ 업데이트 (source -> target)
+          if (!state.graph.succ.has(source))
+            state.graph.succ.set(source, new Map())
+          const sourceMap = state.graph.succ.get(source)!
+          if (!sourceMap.has(target)) sourceMap.set(target, [])
+          sourceMap.get(target)!.push(edgeId)
 
-        const { _source: source, _target: target } = edge
+          // 3. pred 업데이트 (target -> source)
+          if (!state.graph.pred.has(target))
+            state.graph.pred.set(target, new Map())
+          const targetMap = state.graph.pred.get(target)!
+          if (!targetMap.has(source)) targetMap.set(source, [])
+          targetMap.get(source)!.push(edgeId)
+        }),
+          get().sync())
+      },
 
-        // 1. succ에서 제거
-        const sourceMap = state.graph.succ.get(source)
-        if (sourceMap && sourceMap.has(target)) {
-          const list = sourceMap.get(target)!
-          const newList = list.filter((id) => id !== edgeId)
-          if (newList.length === 0) sourceMap.delete(target)
-          else sourceMap.set(target, newList)
-        }
+      deleteEdge: (edgeId) => {
+        set((state) => {
+          const edge = state.graph.edges.get(edgeId)
+          if (!edge) return
 
-        // 2. pred에서 제거
-        const targetMap = state.graph.pred.get(target)
-        if (targetMap && targetMap.has(source)) {
-          const list = targetMap.get(source)!
-          const newList = list.filter((id) => id !== edgeId)
-          if (newList.length === 0) targetMap.delete(source)
-          else targetMap.set(source, newList)
-        }
+          const { _source: source, _target: target } = edge
 
-        // 3. 메인 맵에서 제거
-        state.graph.edges.delete(edgeId)
-      }),
+          // 1. succ에서 제거
+          const sourceMap = state.graph.succ.get(source)
+          if (sourceMap && sourceMap.has(target)) {
+            const list = sourceMap.get(target)!
+            const newList = list.filter((id) => id !== edgeId)
+            if (newList.length === 0) sourceMap.delete(target)
+            else sourceMap.set(target, newList)
+          }
 
-    updateEntities: (type, ids, partialData) =>
-      set((state) => {
-        const { nodes, edges, succ, pred } = state.graph
+          // 2. pred에서 제거
+          const targetMap = state.graph.pred.get(target)
+          if (targetMap && targetMap.has(source)) {
+            const list = targetMap.get(source)!
+            const newList = list.filter((id) => id !== edgeId)
+            if (newList.length === 0) targetMap.delete(source)
+            else targetMap.set(source, newList)
+          }
 
-        if (type === "node") {
-          const data = partialData as Partial<NodeData>
-          ids.forEach((id) => {
-            const existing = nodes.get(id)!
-            nodes.set(id, { ...existing, ...data })
-          })
-        } else {
-          const data = partialData as Partial<EdgeData>
-          ids.forEach((id) => {
-            const edge = edges.get(id)!
+          // 3. 메인 맵에서 제거
+          state.graph.edges.delete(edgeId)
+        })
+        get().sync()
+      },
 
-            const nextSource = data._source ?? edge._source
-            const nextTarget = data._target ?? edge._target
+      updateEntities: (type, ids, partialData, sync = true) => {
+        set((state) => {
+          const { nodes, edges, succ, pred } = state.graph
 
-            // 연결 정보가 변경된 경우에만 인접 리스트 동기화
-            if (nextSource !== edge._source || nextTarget !== edge._target) {
-              // 1. 기존 연결 제거
-              removeFromAdjacency(succ, edge._source, edge._target, id)
-              removeFromAdjacency(pred, edge._target, edge._source, id)
+          if (type === "node") {
+            const data = partialData as Partial<NodeData>
+            ids.forEach((id) => {
+              const existing = nodes.get(id)!
+              nodes.set(id, { ...existing, ...data })
+            })
+          } else {
+            const data = partialData as Partial<EdgeData>
+            ids.forEach((id) => {
+              const edge = edges.get(id)!
 
-              // 2. 새로운 연결 추가
-              addToAdjacency(succ, nextSource, nextTarget, id)
-              addToAdjacency(pred, nextTarget, nextSource, id)
-            }
+              const nextSource = data._source ?? edge._source
+              const nextTarget = data._target ?? edge._target
 
-            // 3. 엣지 데이터 업데이트
-            edges.set(id, { ...edge, ...data })
-          })
-        }
-      }),
-    deleteEntities: (type, ids) =>
-      set((state) => {
-        const { nodes, edges, succ, pred } = state.graph
+              // 연결 정보가 변경된 경우에만 인접 리스트 동기화
+              if (nextSource !== edge._source || nextTarget !== edge._target) {
+                // 1. 기존 연결 제거
+                removeFromAdjacency(succ, edge._source, edge._target, id)
+                removeFromAdjacency(pred, edge._target, edge._source, id)
 
-        if (type === "node") {
-          ids.forEach((nodeId) => {
-            // 1. 해당 노드와 연결된 모든 엣지 찾기 및 삭제
-            // succ(출발)과 pred(도착)에 기록된 모든 상대 노드와의 연결을 끊음
-            const outEdges = succ.get(nodeId)
-            if (outEdges) {
-              outEdges.forEach((edgeIds, targetId) => {
-                edgeIds.forEach((edgeId) => {
-                  edges.delete(edgeId)
-                  removeFromAdjacency(pred, targetId, nodeId, edgeId)
+                // 2. 새로운 연결 추가
+                addToAdjacency(succ, nextSource, nextTarget, id)
+                addToAdjacency(pred, nextTarget, nextSource, id)
+              }
+
+              // 3. 엣지 데이터 업데이트
+              edges.set(id, { ...edge, ...data })
+            })
+          }
+        })
+        get().sync()
+      },
+      deleteEntities: (type, ids) => {
+        ;(set((state) => {
+          const { nodes, edges, succ, pred } = state.graph
+
+          if (type === "node") {
+            ids.forEach((nodeId) => {
+              // 1. 해당 노드와 연결된 모든 엣지 찾기 및 삭제
+              // succ(출발)과 pred(도착)에 기록된 모든 상대 노드와의 연결을 끊음
+              const outEdges = succ.get(nodeId)
+              if (outEdges) {
+                outEdges.forEach((edgeIds, targetId) => {
+                  edgeIds.forEach((edgeId) => {
+                    edges.delete(edgeId)
+                    removeFromAdjacency(pred, targetId, nodeId, edgeId)
+                  })
                 })
-              })
-              succ.delete(nodeId)
-            }
+                succ.delete(nodeId)
+              }
 
-            const inEdges = pred.get(nodeId)
-            if (inEdges) {
-              inEdges.forEach((edgeIds, sourceId) => {
-                edgeIds.forEach((edgeId) => {
-                  edges.delete(edgeId)
-                  removeFromAdjacency(succ, sourceId, nodeId, edgeId)
+              const inEdges = pred.get(nodeId)
+              if (inEdges) {
+                inEdges.forEach((edgeIds, sourceId) => {
+                  edgeIds.forEach((edgeId) => {
+                    edges.delete(edgeId)
+                    removeFromAdjacency(succ, sourceId, nodeId, edgeId)
+                  })
                 })
-              })
-              pred.delete(nodeId)
-            }
+                pred.delete(nodeId)
+              }
 
-            nodes.delete(nodeId)
+              nodes.delete(nodeId)
 
-            state.selectedNodeIds.delete(nodeId)
-          })
-        } else {
-          ids.forEach((edgeId) => {
-            const edge = edges.get(edgeId)
-            if (edge) {
-              removeFromAdjacency(succ, edge._source, edge._target, edgeId)
-              removeFromAdjacency(pred, edge._target, edge._source, edgeId)
-              edges.delete(edgeId)
-            }
-            state.selectedEdgeIds.delete(edgeId)
-          })
+              state.selectedNodeIds.delete(nodeId)
+            })
+          } else {
+            ids.forEach((edgeId) => {
+              const edge = edges.get(edgeId)
+              if (edge) {
+                removeFromAdjacency(succ, edge._source, edge._target, edgeId)
+                removeFromAdjacency(pred, edge._target, edge._source, edgeId)
+                edges.delete(edgeId)
+              }
+              state.selectedEdgeIds.delete(edgeId)
+            })
+          }
+        }),
+          get().sync())
+      },
+      deleteSelected: () => {
+        const state = get()
+        const selectedNodeIds = Array.from(state.selectedNodeIds)
+        const selectedEdgeIds = Array.from(state.selectedEdgeIds)
+
+        if (selectedNodeIds.length === 0 && selectedEdgeIds.length === 0) return
+
+        if (selectedNodeIds.length > 0) {
+          state.deleteEntities("node", selectedNodeIds)
         }
-      }),
-    deleteSelected: () => {
-      const state = get()
-      const selectedNodeIds = Array.from(state.selectedNodeIds)
-      const selectedEdgeIds = Array.from(state.selectedEdgeIds)
 
-      if (selectedNodeIds.length === 0 && selectedEdgeIds.length === 0) return
-
-      if (selectedNodeIds.length > 0) {
-        state.deleteEntities("node", selectedNodeIds)
-      }
-
-      if (selectedEdgeIds.length > 0) {
-        const remainingEdges = selectedEdgeIds.filter((id) =>
-          state.graph.edges.has(id)
-        )
-        if (remainingEdges.length > 0) {
-          state.deleteEntities("edge", remainingEdges)
+        if (selectedEdgeIds.length > 0) {
+          const remainingEdges = selectedEdgeIds.filter((id) =>
+            state.graph.edges.has(id)
+          )
+          if (remainingEdges.length > 0) {
+            state.deleteEntities("edge", remainingEdges)
+          }
         }
-      }
 
-      // 3. 선택 초기화
-      state.setSelectedEntities([], [])
-    },
-  })
+        // 3. 선택 초기화
+        state.setSelectedEntities([], [])
+      },
+    }
+  }

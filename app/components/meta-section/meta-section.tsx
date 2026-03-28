@@ -1,11 +1,12 @@
 import { cn } from "@/lib/utils"
 import { useBoundStore } from "@/stores/use-bound-store"
-import { ChevronsUpDown } from "lucide-react"
+import { Home } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
-import { ButtonGroup } from "~/components/ui/button-group"
+import { Link } from "react-router"
 import LeftbarToggle from "../leftbar/leftbar-toggle"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
+import { Separator } from "../ui/separator"
 export default function MetaSection() {
   const openLeftbar = useBoundStore((state) => state.openLeftbar)
   const name = useBoundStore((state) => state.graphMeta.name)
@@ -27,37 +28,41 @@ export default function MetaSection() {
   }
 
   return (
-    <div
-      className={cn("flex items-center justify-between px-2 py-3", {
-        "gap-2 p-2": !openLeftbar,
-      })}
-    >
-      <ButtonGroup className="mr-2 min-w-0 flex-1">
+    <div className={cn("flex h-12 items-stretch justify-between")}>
+      <Button
+        variant="ghost"
+        size="icon-lg"
+        className="size-12 shrink-0 rounded-none"
+        render={
+          <Link to="/">
+            <Home className="stroke-muted-foreground" />
+          </Link>
+        }
+      />
+      <Separator orientation="vertical" />
+      <div className="flex min-w-0 flex-1 items-stretch">
         {isEditing ? (
           <Input
+            className="h-full rounded-none border-none px-4 font-semibold"
             ref={inputRef}
             value={name}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => setIsEditing(false)}
             onKeyDown={handleKeyDown}
-            className="h-8"
           />
         ) : (
           <Button
             variant="ghost"
-            className="min-w-0 flex-1 justify-start truncate font-semibold"
+            className="h-full min-w-0 flex-1 justify-start truncate rounded-none px-4 font-semibold"
             onClick={() => setIsEditing(true)}
           >
             {name}
           </Button>
         )}
-
-        <Button variant="ghost" size="icon" className="shrink-0">
-          <ChevronsUpDown className="h-4 w-4" />
-        </Button>
-      </ButtonGroup>
-
-      <LeftbarToggle />
+      </div>
+      <div>
+        <LeftbarToggle className="size-12 rounded-none" />
+      </div>
     </div>
   )
 }

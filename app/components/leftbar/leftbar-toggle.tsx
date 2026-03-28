@@ -1,21 +1,25 @@
-import { useBoundStore } from "@/stores/use-bound-store";
-import { Sidebar } from "lucide-react";
-import { Button } from "../ui/button";
+import { cn } from "@/lib/utils"
+import { useBoundStore } from "@/stores/use-bound-store"
+import { Sidebar } from "lucide-react"
+import type { ComponentProps } from "react"
+import { Button } from "../ui/button"
 
-export default function LeftbarToggle() {
-  const openLeftbar = useBoundStore((state) => state.openLeftbar);
-  const setOpenLeftbar = useBoundStore((state) => state.setOpenLeftbar);
+export default function LeftbarToggle({
+  className,
+}: ComponentProps<typeof Button>) {
+  const openLeftbar = useBoundStore((state) => state.openLeftbar)
+  const setOpenLeftbar = useBoundStore((state) => state.setOpenLeftbar)
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      className="text-muted-foreground"
+      className={cn("text-muted-foreground", className)}
       onClick={() => {
-        setOpenLeftbar(!openLeftbar);
+        setOpenLeftbar(!openLeftbar)
       }}
     >
       <Sidebar />
     </Button>
-  );
+  )
 }

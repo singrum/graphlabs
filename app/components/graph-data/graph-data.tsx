@@ -15,7 +15,7 @@ export default function GraphData() {
         onValueChange={(e) => {
           setDataMenu(Number(e))
         }}
-        className="h-full w-full gap-4 p-4"
+        className="w-full gap-4 p-4"
       >
         <GraphDataMenuList />
         {graphDataMenus.map((e, index) => (

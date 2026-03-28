@@ -58,7 +58,7 @@ export default function AdjView({ adj }: { adj: AdjacencyMap }) {
                 ))
               ) : (
                 <div className="h-8 px-6 py-2 text-sm text-muted-foreground italic">
-                  Has no successors
+                  has no adjacent nodes.
                 </div>
               )}
             </CollapsibleContent>

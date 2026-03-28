@@ -1,13 +1,12 @@
 import { db } from "@/lib/db"
 import { addToAdjacency, removeFromAdjacency } from "@/lib/graph-utils"
+import { getNextExclusiveLabel } from "@/lib/utils"
 import type { EdgeData, Graph, GraphMeta, NodeData } from "@/types/graph"
 import lodash from "lodash"
 import { v4 } from "uuid"
 import type { StateCreator } from "zustand"
 import type { BoundStore } from "./use-bound-store"
 const { debounce } = lodash
-let nodeCnt = 0
-let edgeCnt = 0
 
 export interface GraphSlice {
   graphMeta: GraphMeta
@@ -58,7 +57,7 @@ export const createGraphSlice =
         set((state) => {
           state.graph.nodes.set(id, {
             _id: id,
-            ...{ _label: `Node ${++nodeCnt}` },
+            ...{ _label: getNextExclusiveLabel(state.graph.nodes, "Node") },
             _color: "#00a2ff",
             _x: x,
             _y: y,
@@ -111,7 +110,7 @@ export const createGraphSlice =
             _id: edgeId,
             _source: source,
             _target: target,
-            _label: `Edge ${++edgeCnt}`,
+            _label: getNextExclusiveLabel(state.graph.edges, "Edge"),
           }
 
           // 1. Edges 맵에 추가

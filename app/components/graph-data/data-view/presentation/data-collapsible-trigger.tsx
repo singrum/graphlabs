@@ -28,7 +28,7 @@ export function DataCollapsibleButton({
       variant="ghost"
       size="icon-sm"
       className={cn(
-        "items-center justify-center [&_svg]:transition-transform data-[state=closed]:[&_svg]:rotate-0 data-[state=open]:[&_svg]:rotate-90",
+        "items-center justify-center [&_svg]:transition-transform",
         className
       )}
       {...props}

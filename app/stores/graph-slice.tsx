@@ -112,7 +112,7 @@ export const createGraphSlice =
       },
 
       addEdge: (source, target) => {
-        ;(set((state) => {
+        set((state) => {
           const edgeId = v4()
           const newEdge: EdgeData = {
             _id: edgeId,
@@ -137,8 +137,8 @@ export const createGraphSlice =
           const targetMap = state.graph.pred.get(target)!
           if (!targetMap.has(source)) targetMap.set(source, [])
           targetMap.get(source)!.push(edgeId)
-        }),
-          get().sync())
+        })
+        get().sync()
       },
 
       deleteEdge: (edgeId) => {
@@ -172,7 +172,7 @@ export const createGraphSlice =
         get().sync()
       },
 
-      updateEntities: (type, ids, partialData, sync = true) => {
+      updateEntities: (type, ids, partialData) => {
         set((state) => {
           const { nodes, edges, succ, pred } = state.graph
 
@@ -209,7 +209,7 @@ export const createGraphSlice =
         get().sync()
       },
       deleteEntities: (type, ids) => {
-        ;(set((state) => {
+        set((state) => {
           const { nodes, edges, succ, pred } = state.graph
 
           if (type === "node") {
@@ -253,8 +253,8 @@ export const createGraphSlice =
               state.selectedEdgeIds.delete(edgeId)
             })
           }
-        }),
-          get().sync())
+        })
+        get().sync()
       },
       deleteSelected: () => {
         const state = get()

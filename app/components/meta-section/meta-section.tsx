@@ -32,10 +32,10 @@ export default function MetaSection() {
       <Button
         variant="ghost"
         size="icon-lg"
-        className="size-12 shrink-0 rounded-none"
+        className="font-muted-foreground size-12 shrink-0 rounded-none"
         render={
           <Link to="/">
-            <Home className="stroke-muted-foreground" />
+            <Home />
           </Link>
         }
       />

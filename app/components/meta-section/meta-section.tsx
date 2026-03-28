@@ -40,7 +40,7 @@ export default function MetaSection() {
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => setIsEditing(false)}
             onKeyDown={handleKeyDown}
-            className="h-9"
+            className="h-8"
           />
         ) : (
           <Button

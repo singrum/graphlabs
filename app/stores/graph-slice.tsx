@@ -10,6 +10,7 @@ const { debounce } = lodash
 
 export interface GraphSlice {
   graphMeta: GraphMeta
+  setTitle: (title: string) => void
   graph: Graph
 
   sync: () => Promise<void>
@@ -46,6 +47,13 @@ export const createGraphSlice =
     }, 500)
     return {
       graphMeta: initialData.graphMeta,
+      setTitle: (title) => {
+        set((state) => {
+          state.graphMeta.name = title
+        })
+        get().sync()
+      },
+
       graph: initialData.graph,
 
       sync: async () => {

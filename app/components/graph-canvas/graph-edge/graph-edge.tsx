@@ -5,7 +5,7 @@ import type { DirectedGraph, UndirectedGraph } from "@/types/graph"
 import { memo, useMemo } from "react"
 import { Arrow, Line } from "react-konva" // Line 추가
 import { useShallow } from "zustand/react/shallow"
-
+const EDGE_MARGIN = 3
 export const GraphEdge = memo(({ id }: { id: string }) => {
   const pointerLength = useBoundStore((state) => state.pointerLength)
   const pointerWidth = useBoundStore((state) => state.pointerWidth)
@@ -19,11 +19,11 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
   const graphType = useBoundStore((state) => state.graphMeta.type)
   const isDirected = graphType === "directed"
 
-  const edge = useBoundStore((state) => state.graph.edges.get(id))
+  const edge = useBoundStore((state) => state.graph.edges.get(id)!)
   const isSelected = useBoundStore((state) => state.selectedEdgeIds.has(id))
 
-  const sId = edge?._source
-  const tId = edge?._target
+  const sId = edge._source
+  const tId = edge._target
 
   const sourceNode = useBoundStore((state) =>
     sId ? state.graph.nodes.get(sId) : null
@@ -32,19 +32,20 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
     tId ? state.graph.nodes.get(tId) : null
   )
 
-  // 인접 리스트 참조 (타입에 따라 분기)
   const pairEdgeIds = useBoundStore(
     useShallow((state) => {
       if (!sId || !tId) return []
 
       if (isDirected) {
         const dg = state.graph as DirectedGraph
-        const forward = dg.succ.get(sId)?.get(tId) || []
-        const backward = dg.succ.get(tId)?.get(sId) || []
+        // [중요] 일관된 순서를 위해 항상 ID가 작은 노드에서 큰 노드 순서로 데이터를 합칩니다.
+        const [first, second] = sId < tId ? [sId, tId] : [tId, sId]
+        const forward = dg.succ.get(first)?.get(second) || []
+        const backward = dg.succ.get(second)?.get(first) || []
+        // 순서가 고정된 전체 엣지 리스트 반환
         return [...forward, ...backward]
       } else {
         const ug = state.graph as UndirectedGraph
-        // 무방향은 adj 하나만 확인하면 됨 (이미 양방향 데이터가 들어있음)
         return ug.adj.get(sId)?.get(tId) || []
       }
     })
@@ -61,16 +62,16 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
     const ty = targetNode._y
     const isLoop = sId === tId
 
-    // 유향 그래프일 때만 화살표 촉만큼 오프셋을 줍니다.
-    const tipOffset = isDirected ? pointerLength * 0.2 : 0
-    const adjustedRadius = nodeRadius + tipOffset
+    // 엣지가 노드 중심으로부터 떨어져야 할 실제 거리
+    const effectiveRadius = nodeRadius + EDGE_MARGIN
 
     if (isLoop) {
       const loopIndex = pairEdgeIds.indexOf(id)
+      // 루프도 effectiveRadius를 기준으로 그립니다.
       const points = getSelfLoopPoints(
         sx,
         sy,
-        adjustedRadius,
+        effectiveRadius + (isDirected ? pointerLength * 0.2 : 0),
         loopIndex !== -1 ? loopIndex : 0
       )
       return { points, isCurved: true, isLoop: true }
@@ -81,34 +82,32 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
     const isCurved = total > 1
     const step = 40
     const offset = isCurved ? (index - (total - 1) / 2) * step : 0
-
-    // 무방향일 때는 source/target 순서가 중요하지 않으므로 일관된 오프셋 계산을 위해 ID 비교
-    const isReversed = (sId ?? "") > (tId ?? "")
+    const isReversed = sId > tId
 
     let points: number[] = []
     if (isCurved && index !== -1) {
       const cp = getControlPoint(sx, sy, tx, ty, offset, isReversed)
 
-      // Undirected일 때는 화살표가 없으므로 굳이 곡선 끝점을 노드 경계면에 맞출 필요가 적지만,
-      // 깔끔한 시각화를 위해 계산은 유지합니다.
       const angleSource = Math.atan2(cp.y - sy, cp.x - sx)
       const angleTarget = Math.atan2(cp.y - ty, cp.x - tx)
 
+      // nodeRadius 대신 effectiveRadius 사용
       points = [
-        sx + Math.cos(angleSource) * nodeRadius,
-        sy + Math.sin(angleSource) * nodeRadius,
+        sx + Math.cos(angleSource) * effectiveRadius,
+        sy + Math.sin(angleSource) * effectiveRadius,
         cp.x,
         cp.y,
-        tx + Math.cos(angleTarget) * nodeRadius,
-        ty + Math.sin(angleTarget) * nodeRadius,
+        tx + Math.cos(angleTarget) * effectiveRadius,
+        ty + Math.sin(angleTarget) * effectiveRadius,
       ]
     } else {
       const angle = Math.atan2(ty - sy, tx - sx)
+      // nodeRadius 대신 effectiveRadius 사용
       points = [
-        sx + Math.cos(angle) * nodeRadius,
-        sy + Math.sin(angle) * nodeRadius,
-        tx - Math.cos(angle) * nodeRadius,
-        ty - Math.sin(angle) * nodeRadius,
+        sx + Math.cos(angle) * effectiveRadius,
+        sy + Math.sin(angle) * effectiveRadius,
+        tx - Math.cos(angle) * effectiveRadius,
+        ty - Math.sin(angle) * effectiveRadius,
       ]
     }
     return { points, isCurved, isLoop: false }
@@ -123,8 +122,8 @@ export const GraphEdge = memo(({ id }: { id: string }) => {
     sId,
     tId,
     isDirected,
+    EDGE_MARGIN, // 의존성 추가
   ])
-
   if (!edge || !sourceNode || !targetNode || layout.points.length === 0) {
     return null
   }

@@ -91,12 +91,18 @@ export function useMarqueeSelection(
 
           const isLoop = edge._source === edge._target
 
-          // [핵심] 그래프 타입에 따른 인접 엣지 리스트(Pair) 가져오기
+          // [수정] GraphEdge 컴포넌트와 동일한 Pair 정규화 로직 적용
           let pairEdgeIds: string[] = []
           if (isDirected) {
             const dg = graph as DirectedGraph
-            const forward = dg.succ.get(edge._source)?.get(edge._target) || []
-            const backward = dg.succ.get(edge._target)?.get(edge._source) || []
+            // 일관된 순서를 위해 항상 ID가 작은 노드에서 큰 노드 순서로 데이터를 합침
+            const [first, second] =
+              edge._source < edge._target
+                ? [edge._source, edge._target]
+                : [edge._target, edge._source]
+
+            const forward = dg.succ.get(first)?.get(second) || []
+            const backward = dg.succ.get(second)?.get(first) || []
             pairEdgeIds = isLoop ? forward : [...forward, ...backward]
           } else {
             const ug = graph as UndirectedGraph
@@ -107,32 +113,20 @@ export function useMarqueeSelection(
           const index = pairEdgeIds.indexOf(id)
 
           if (isLoop) {
-            // 루프 충돌 검사
             if (isLoopIntersectingRect(s._x, s._y, nodeRadius, index, rect)) {
               nextEdgeIds.push(id)
             }
           } else {
             const isCurved = total > 1
-            const dx = t._x - s._x
-            const dy = t._y - s._y
-            const angle = Math.atan2(dy, dx)
+            // [수정] index 기반 offset 계산 동기화
+            const step = 40
+            const offset = isCurved ? (index - (total - 1) / 2) * step : 0
 
-            // 직선/곡선 공통 트리밍 좌표 (노드 경계면)
-            const trimmedS = {
-              x: s._x + Math.cos(angle) * nodeRadius,
-              y: s._y + Math.sin(angle) * nodeRadius,
-            }
-            const trimmedT = {
-              x: t._x - Math.cos(angle) * nodeRadius,
-              y: t._y - Math.sin(angle) * nodeRadius,
-            }
+            // [수정] 현재 엣지의 실제 방향에 따른 reversed 판별 동기화
+            // (pairEdgeIds를 source < target 기준으로 뽑았으므로 실제 엣지가 그 반대면 reverse)
+            const isReversed = edge._source > edge._target
 
             if (isCurved) {
-              const step = 40
-              const offset = (index - (total - 1) / 2) * step
-              // 무방향일 때도 일관된 곡선 방향을 위해 ID 비교
-              const isReversed = edge._source > edge._target
-
               const cp = getControlPoint(
                 s._x,
                 s._y,
@@ -168,7 +162,20 @@ export function useMarqueeSelection(
                 nextEdgeIds.push(id)
               }
             } else {
-              // 직선 충돌 검사
+              // 직선 충돌 검사 (트리밍 포함)
+              const dx = t._x - s._x
+              const dy = t._y - s._y
+              const angle = Math.atan2(dy, dx)
+
+              const trimmedS = {
+                x: s._x + Math.cos(angle) * nodeRadius,
+                y: s._y + Math.sin(angle) * nodeRadius,
+              }
+              const trimmedT = {
+                x: t._x - Math.cos(angle) * nodeRadius,
+                y: t._y - Math.sin(angle) * nodeRadius,
+              }
+
               if (
                 isLineIntersectingRect(
                   trimmedS.x,

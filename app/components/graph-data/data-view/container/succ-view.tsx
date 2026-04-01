@@ -1,8 +1,9 @@
-import { useBoundStore } from "@/stores/use-bound-store";
-import AdjView from "../presentation/adj-view";
+import { useBoundStore } from "@/stores/use-bound-store"
+import type { DirectedGraph } from "@/types/graph"
+import AdjMapView from "../presentation/adj-map-view"
 
 export default function SuccView() {
-  const succ = useBoundStore((state) => state.graph.succ);
+  const succ = useBoundStore((state) => (state.graph as DirectedGraph).succ)
 
-  return <AdjView adj={succ} />;
+  return <AdjMapView adj={succ} />
 }

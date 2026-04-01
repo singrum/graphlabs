@@ -10,6 +10,7 @@ export default function GraphTypeToggle() {
       variant="outline"
       value={[searchParams.get("type") ?? "directed"]}
       onValueChange={(value) => {
+        if (value.length === 0) return
         setSearchParams((prev) => {
           prev.set("type", value[0])
           return prev

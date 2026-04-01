@@ -1,11 +1,11 @@
-import { useBoundStore } from "@/stores/use-bound-store";
-import { useShallow } from "zustand/react/shallow";
-import EdgeLabelButton from "../presentation/edge-label-button";
+import { useBoundStore } from "@/stores/use-bound-store"
+import { useShallow } from "zustand/react/shallow"
+import EdgeLabelButton from "../presentation/edge-label-button"
 
 export default function EdgeView() {
   const edges = useBoundStore(
-    useShallow((state) => [...state.graph.edges.keys()]),
-  );
+    useShallow((state) => [...state.graph.edges.keys()])
+  )
   return (
     <div className="space-y-1">
       {edges.map((edgeId) => (
@@ -16,5 +16,5 @@ export default function EdgeView() {
         />
       ))}
     </div>
-  );
+  )
 }

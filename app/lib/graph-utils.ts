@@ -1,3 +1,36 @@
+import type { DirectedGraph, Schema, UndirectedGraph } from "@/types/graph"
+export const defaultNodeSchema: Schema = {
+  _id: "text",
+  _label: "text",
+  _color: "color",
+  _x: "number",
+  _y: "number",
+}
+
+export const defaultEdgeSchema: Schema = {
+  _id: "text",
+  _label: "text",
+  _source: "node",
+  _target: "node",
+}
+
+export const createEmptyUndirectedGraph = (): UndirectedGraph => ({
+  nodes: new Map(),
+  edges: new Map(),
+  nodeSchema: defaultNodeSchema,
+  edgeSchema: defaultEdgeSchema,
+  adj: new Map(),
+})
+
+export const createEmptyDirectedGraph = (): DirectedGraph => ({
+  nodes: new Map(),
+  edges: new Map(),
+  nodeSchema: defaultNodeSchema,
+  edgeSchema: defaultEdgeSchema,
+  succ: new Map(),
+  pred: new Map(),
+})
+
 /**
  * 인접 리스트(succ 또는 pred)에 특정 엣지 ID를 추가하는 함수
  */

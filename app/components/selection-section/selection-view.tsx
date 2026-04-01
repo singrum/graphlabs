@@ -73,7 +73,7 @@ export function SelectionView({ type, data, schema }: SelectionViewProps) {
   const selectedCount = data.length
 
   return (
-    <div className="h-full space-y-6 overflow-y-scroll p-4">
+    <div className="no-scrollbar h-full space-y-6 overflow-y-scroll p-4">
       <Header type={type} data={data} />
       <div className="space-y-4">
         {(

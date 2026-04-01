@@ -11,7 +11,7 @@ import EdgeLabelButton from "./edge-label-button"
 import { cn } from "@/lib/utils"
 import NodeLabelButton from "./node-label-button"
 
-export default function AdjView({ adj }: { adj: AdjacencyMap }) {
+export default function AdjMapView({ adj }: { adj: AdjacencyMap }) {
   return (
     <div className="space-y-1">
       {[...adj.keys()].map((key1) => {

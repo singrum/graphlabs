@@ -1,7 +1,14 @@
 import { db } from "@/lib/db"
 import { addToAdjacency, removeFromAdjacency } from "@/lib/graph-utils"
 import { getNextExclusiveLabel } from "@/lib/utils"
-import type { EdgeData, Graph, GraphMeta, NodeData } from "@/types/graph"
+import type {
+  DirectedGraph,
+  EdgeData,
+  Graph,
+  GraphMeta,
+  NodeData,
+  UndirectedGraph,
+} from "@/types/graph"
 import lodash from "lodash"
 import { v4 } from "uuid"
 import type { StateCreator } from "zustand"
@@ -70,9 +77,16 @@ export const createGraphSlice =
             _x: x,
             _y: y,
           } as NodeData)
-          // 인접 리스트 초기화 (옵션)
-          if (!state.graph.succ.has(id)) state.graph.succ.set(id, new Map())
-          if (!state.graph.pred.has(id)) state.graph.pred.set(id, new Map())
+
+          const type = state.graphMeta.type
+          if (type === "directed") {
+            const dg = state.graph as DirectedGraph
+            if (!dg.succ.has(id)) dg.succ.set(id, new Map())
+            if (!dg.pred.has(id)) dg.pred.set(id, new Map())
+          } else {
+            const ug = state.graph as UndirectedGraph
+            if (!ug.adj.has(id)) ug.adj.set(id, new Map())
+          }
         })
         get().setSelectedNodes([id])
         get().sync()
@@ -80,64 +94,77 @@ export const createGraphSlice =
 
       deleteNode: (nodeId) => {
         set((state) => {
-          // 1. 해당 노드와 연결된 모든 엣지 식별 및 삭제
-          // 나가는 엣지들
-          const targets = state.graph.succ.get(nodeId)
-          if (targets) {
-            targets.forEach((edgeIds, targetId) => {
-              edgeIds.forEach((edgeId) => state.graph.edges.delete(edgeId))
-              // 상대방(target)의 pred에서도 제거
-              state.graph.pred.get(targetId)?.delete(nodeId)
-            })
+          const g = state.graph
+          const type = state.graphMeta.type
+
+          if (type === "directed") {
+            const dg = g as DirectedGraph
+
+            const targets = dg.succ.get(nodeId)
+            if (targets) {
+              targets.forEach((edgeIds, targetId) => {
+                edgeIds.forEach((edgeId) => dg.edges.delete(edgeId))
+                dg.pred.get(targetId)?.delete(nodeId)
+              })
+            }
+
+            const sources = dg.pred.get(nodeId)
+            if (sources) {
+              sources.forEach((edgeIds, sourceId) => {
+                edgeIds.forEach((edgeId) => dg.edges.delete(edgeId))
+                dg.succ.get(sourceId)?.delete(nodeId)
+              })
+            }
+
+            dg.succ.delete(nodeId)
+            dg.pred.delete(nodeId)
+          } else {
+            const ug = g as UndirectedGraph
+
+            const neighbors = ug.adj.get(nodeId)
+            if (neighbors) {
+              neighbors.forEach((edgeIds, neighborId) => {
+                edgeIds.forEach((edgeId) => ug.edges.delete(edgeId))
+                ug.adj.get(neighborId)?.delete(nodeId)
+              })
+            }
+
+            ug.adj.delete(nodeId)
           }
 
-          // 들어오는 엣지들
-          const sources = state.graph.pred.get(nodeId)
-          if (sources) {
-            sources.forEach((edgeIds, sourceId) => {
-              edgeIds.forEach((edgeId) => state.graph.edges.delete(edgeId))
-              // 상대방(source)의 succ에서도 제거
-              state.graph.succ.get(sourceId)?.delete(nodeId)
-            })
-          }
-
-          // 2. 인접 리스트에서 노드 엔트리 자체를 삭제
-          state.graph.succ.delete(nodeId)
-          state.graph.pred.delete(nodeId)
-
-          // 3. 노드 삭제
-          state.graph.nodes.delete(nodeId)
+          g.nodes.delete(nodeId)
+          state.selectedNodeIds.delete(nodeId)
         })
+
         get().sync()
       },
-
-      addEdge: (source, target) => {
+      addEdge: (sourceId, targetId) => {
         set((state) => {
           const edgeId = v4()
           const newEdge: EdgeData = {
             _id: edgeId,
-            _source: source,
-            _target: target,
+            _source: sourceId,
+            _target: targetId,
             _label: getNextExclusiveLabel(state.graph.edges, "Edge"),
           }
-
-          // 1. Edges 맵에 추가
           state.graph.edges.set(edgeId, newEdge)
 
-          // 2. succ 업데이트 (source -> target)
-          if (!state.graph.succ.has(source))
-            state.graph.succ.set(source, new Map())
-          const sourceMap = state.graph.succ.get(source)!
-          if (!sourceMap.has(target)) sourceMap.set(target, [])
-          sourceMap.get(target)!.push(edgeId)
+          const type = state.graphMeta.type
+          const g = state.graph
 
-          // 3. pred 업데이트 (target -> source)
-          if (!state.graph.pred.has(target))
-            state.graph.pred.set(target, new Map())
-          const targetMap = state.graph.pred.get(target)!
-          if (!targetMap.has(source)) targetMap.set(source, [])
-          targetMap.get(source)!.push(edgeId)
+          if (type === "directed") {
+            const dg = g as DirectedGraph
+
+            addToAdjacency(dg.succ, sourceId, targetId, edgeId)
+            addToAdjacency(dg.pred, targetId, sourceId, edgeId)
+          } else {
+            const ug = g as UndirectedGraph
+
+            addToAdjacency(ug.adj, sourceId, targetId, edgeId)
+            addToAdjacency(ug.adj, targetId, sourceId, edgeId)
+          }
         })
+
         get().sync()
       },
 
@@ -147,62 +174,76 @@ export const createGraphSlice =
           if (!edge) return
 
           const { _source: source, _target: target } = edge
+          const g = state.graph
+          const type = state.graphMeta.type
 
-          // 1. succ에서 제거
-          const sourceMap = state.graph.succ.get(source)
-          if (sourceMap && sourceMap.has(target)) {
-            const list = sourceMap.get(target)!
-            const newList = list.filter((id) => id !== edgeId)
-            if (newList.length === 0) sourceMap.delete(target)
-            else sourceMap.set(target, newList)
+          if (type === "directed") {
+            const dg = g as DirectedGraph
+            // 1. succ (출발지 기준)에서 제거
+            removeFromAdjacency(dg.succ, source, target, edgeId)
+            // 2. pred (도착지 기준)에서 제거
+            removeFromAdjacency(dg.pred, target, source, edgeId)
+          } else {
+            const ug = g as UndirectedGraph
+            // 무방향은 adj의 양방향 엔트리 모두에서 해당 edgeId 제거
+            removeFromAdjacency(ug.adj, source, target, edgeId)
+            removeFromAdjacency(ug.adj, target, source, edgeId)
           }
 
-          // 2. pred에서 제거
-          const targetMap = state.graph.pred.get(target)
-          if (targetMap && targetMap.has(source)) {
-            const list = targetMap.get(source)!
-            const newList = list.filter((id) => id !== edgeId)
-            if (newList.length === 0) targetMap.delete(source)
-            else targetMap.set(source, newList)
-          }
+          // 3. 메인 Edges 맵에서 제거
+          g.edges.delete(edgeId)
 
-          // 3. 메인 맵에서 제거
-          state.graph.edges.delete(edgeId)
+          // 선택 상태에서도 제거 (Optional)
+          state.selectedEdgeIds.delete(edgeId)
         })
+
         get().sync()
       },
-
       updateEntities: (type, ids, partialData) => {
         set((state) => {
-          const { nodes, edges, succ, pred } = state.graph
+          const g = state.graph
+          const isDirected = state.graphMeta.type === "directed"
 
           if (type === "node") {
             const data = partialData as Partial<NodeData>
             ids.forEach((id) => {
-              const existing = nodes.get(id)!
-              nodes.set(id, { ...existing, ...data })
+              const existing = g.nodes.get(id)
+              if (existing) {
+                g.nodes.set(id, { ...existing, ...data })
+              }
             })
           } else {
             const data = partialData as Partial<EdgeData>
             ids.forEach((id) => {
-              const edge = edges.get(id)!
+              const edge = g.edges.get(id)
+              if (!edge) return
 
               const nextSource = data._source ?? edge._source
               const nextTarget = data._target ?? edge._target
 
-              // 연결 정보가 변경된 경우에만 인접 리스트 동기화
+              // 연결 정보(source 또는 target)가 실제로 변경된 경우에만 인접 리스트 갱신
               if (nextSource !== edge._source || nextTarget !== edge._target) {
-                // 1. 기존 연결 제거
-                removeFromAdjacency(succ, edge._source, edge._target, id)
-                removeFromAdjacency(pred, edge._target, edge._source, id)
-
-                // 2. 새로운 연결 추가
-                addToAdjacency(succ, nextSource, nextTarget, id)
-                addToAdjacency(pred, nextTarget, nextSource, id)
+                if (isDirected) {
+                  const dg = g as DirectedGraph
+                  // 1. 기존 연결 제거
+                  removeFromAdjacency(dg.succ, edge._source, edge._target, id)
+                  removeFromAdjacency(dg.pred, edge._target, edge._source, id)
+                  // 2. 새로운 연결 추가
+                  addToAdjacency(dg.succ, nextSource, nextTarget, id)
+                  addToAdjacency(dg.pred, nextTarget, nextSource, id)
+                } else {
+                  const ug = g as UndirectedGraph
+                  // 1. 기존 연결 제거 (양방향)
+                  removeFromAdjacency(ug.adj, edge._source, edge._target, id)
+                  removeFromAdjacency(ug.adj, edge._target, edge._source, id)
+                  // 2. 새로운 연결 추가 (양방향)
+                  addToAdjacency(ug.adj, nextSource, nextTarget, id)
+                  addToAdjacency(ug.adj, nextTarget, nextSource, id)
+                }
               }
 
               // 3. 엣지 데이터 업데이트
-              edges.set(id, { ...edge, ...data })
+              g.edges.set(id, { ...edge, ...data })
             })
           }
         })
@@ -210,46 +251,60 @@ export const createGraphSlice =
       },
       deleteEntities: (type, ids) => {
         set((state) => {
-          const { nodes, edges, succ, pred } = state.graph
+          const g = state.graph
+          const isDirected = state.graphMeta.type === "directed"
 
           if (type === "node") {
             ids.forEach((nodeId) => {
-              // 1. 해당 노드와 연결된 모든 엣지 찾기 및 삭제
-              // succ(출발)과 pred(도착)에 기록된 모든 상대 노드와의 연결을 끊음
-              const outEdges = succ.get(nodeId)
-              if (outEdges) {
-                outEdges.forEach((edgeIds, targetId) => {
-                  edgeIds.forEach((edgeId) => {
-                    edges.delete(edgeId)
-                    removeFromAdjacency(pred, targetId, nodeId, edgeId)
-                  })
+              if (isDirected) {
+                const dg = g as DirectedGraph
+
+                // 1. 나가는 엣지 정리 (Out-edges)
+                dg.succ.get(nodeId)?.forEach((edgeIds, targetId) => {
+                  edgeIds.forEach((eid) => dg.edges.delete(eid))
+                  dg.pred.get(targetId)?.delete(nodeId)
                 })
-                succ.delete(nodeId)
+                dg.succ.delete(nodeId)
+
+                // 2. 들어오는 엣지 정리 (In-edges)
+                dg.pred.get(nodeId)?.forEach((edgeIds, sourceId) => {
+                  edgeIds.forEach((eid) => dg.edges.delete(eid))
+                  dg.succ.get(sourceId)?.delete(nodeId)
+                })
+                dg.pred.delete(nodeId)
+              } else {
+                const ug = g as UndirectedGraph
+
+                // 1. 인접한 모든 노드와의 연결 정리
+                ug.adj.get(nodeId)?.forEach((edgeIds, neighborId) => {
+                  edgeIds.forEach((eid) => ug.edges.delete(eid))
+                  // 상대방의 인접 리스트에서 나(nodeId)를 삭제
+                  ug.adj.get(neighborId)?.delete(nodeId)
+                })
+                ug.adj.delete(nodeId)
               }
 
-              const inEdges = pred.get(nodeId)
-              if (inEdges) {
-                inEdges.forEach((edgeIds, sourceId) => {
-                  edgeIds.forEach((edgeId) => {
-                    edges.delete(edgeId)
-                    removeFromAdjacency(succ, sourceId, nodeId, edgeId)
-                  })
-                })
-                pred.delete(nodeId)
-              }
-
-              nodes.delete(nodeId)
-
+              // 공통: 노드 맵에서 삭제 및 선택 해제
+              g.nodes.delete(nodeId)
               state.selectedNodeIds.delete(nodeId)
             })
           } else {
+            // 엣지 삭제 로직
             ids.forEach((edgeId) => {
-              const edge = edges.get(edgeId)
-              if (edge) {
-                removeFromAdjacency(succ, edge._source, edge._target, edgeId)
-                removeFromAdjacency(pred, edge._target, edge._source, edgeId)
-                edges.delete(edgeId)
+              const edge = g.edges.get(edgeId)
+              if (!edge) return
+
+              if (isDirected) {
+                const dg = g as DirectedGraph
+                removeFromAdjacency(dg.succ, edge._source, edge._target, edgeId)
+                removeFromAdjacency(dg.pred, edge._target, edge._source, edgeId)
+              } else {
+                const ug = g as UndirectedGraph
+                removeFromAdjacency(ug.adj, edge._source, edge._target, edgeId)
+                removeFromAdjacency(ug.adj, edge._target, edge._source, edgeId)
               }
+
+              g.edges.delete(edgeId)
               state.selectedEdgeIds.delete(edgeId)
             })
           }

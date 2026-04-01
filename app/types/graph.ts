@@ -32,20 +32,31 @@ export type EdgeData = {
 export type Nodes = Map<string, NodeData>
 export type Edges = Map<string, EdgeData>
 export type AdjacencyMap = Map<string, Map<string, string[]>>
+export type GraphType = "directed" | "undirected"
 export type GraphMeta = {
   id: string
   name: string
-  type: string
+  type: GraphType
   createdAt: number
   updatedAt: number
 }
-export type Graph = {
+export type Graph = DirectedGraph | UndirectedGraph
+
+export type DirectedGraph = {
   nodes: Nodes
   edges: Edges
   nodeSchema: Schema
   edgeSchema: Schema
   succ: AdjacencyMap
   pred: AdjacencyMap
+}
+
+export type UndirectedGraph = {
+  nodes: Nodes
+  edges: Edges
+  nodeSchema: Schema
+  edgeSchema: Schema
+  adj: AdjacencyMap
 }
 
 export type Nullable<T> = {

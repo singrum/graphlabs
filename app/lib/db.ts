@@ -1,7 +1,10 @@
 import type { Graph, GraphMeta } from "@/types/graph"
 import Dexie, { type Table } from "dexie"
 import { v4 } from "uuid"
-import { defaultEdgeSchema, defaultNodeSchema } from "./default"
+import {
+  createEmptyDirectedGraph,
+  createEmptyUndirectedGraph,
+} from "./graph-utils"
 
 export class MyDatabase extends Dexie {
   graphMeta!: Table<GraphMeta>
@@ -40,24 +43,19 @@ export class MyDatabase extends Dexie {
     await this.graph.put({ id: graphMeta.id, graph })
   }
 
-  async newGraph() {
+  async newGraph(type: GraphMeta["type"]): Promise<string> {
     const id = v4()
     await this.saveGraph(
       {
         id,
         name: "New Graph",
-        type: "directed",
+        type,
         createdAt: new Date().getMilliseconds(),
         updatedAt: new Date().getMilliseconds(),
       },
-      {
-        nodes: new Map(),
-        edges: new Map(),
-        nodeSchema: defaultNodeSchema,
-        edgeSchema: defaultEdgeSchema,
-        succ: new Map(),
-        pred: new Map(),
-      }
+      type == "directed"
+        ? createEmptyDirectedGraph()
+        : createEmptyUndirectedGraph()
     )
     return id
   }

@@ -3,6 +3,4 @@
 - Supports editing functionalities for both graphs and digraphs
 - Automatically saves data to local IndexedDB
 
-<img width="2446" height="1492" alt="image" src="https://github.com/user-attachments/assets/654bf644-c403-4424-90db-1a969fb398e7" />
-
-
+<img width="2440" height="1492" alt="image" src="https://github.com/user-attachments/assets/06852d42-ff32-4991-a3c1-c2e273aff39e" />

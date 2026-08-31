@@ -6,7 +6,7 @@
 ### Installation & Running
 
 ```bash
-git clone -b dev https://github.com/singrum/graphlabs.git
+git clone https://github.com/singrum/graphlabs.git
 cd graphlabs
 npm install
 npm run dev
